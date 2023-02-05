@@ -1,0 +1,3 @@
+KeyError in line 11 of /lustre/BIF/nobackup/passa006/snakemake/Snakefile:
+'mainpath'
+  File "/lustre/BIF/nobackup/passa006/snakemake/Snakefile", line 11, in <module>

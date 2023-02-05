@@ -1,0 +1,28 @@
+The flag 'directory' used in rule all is only valid for outputs, not inputs.
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job                          count    min threads    max threads
+-------------------------  -------  -------------  -------------
+all                              1              1              1
+run_configurated_pipeline        1              1              1
+total                            2              1              1
+
+Select jobs to execute...
+
+[Sat Feb  4 15:14:52 2023]
+rule run_configurated_pipeline:
+    output: /lustre/BIF/nobackup/passa006/data/results
+    jobid: 3
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results
+    resources: tmpdir=/tmp
+
+Waiting at most 5 seconds for missing files.
+MissingOutputException in rule run_configurated_pipeline in file /lustre/BIF/nobackup/passa006/snakemake/startersnake, line 34:
+Job 3  completed successfully, but some output files are missing. Missing files after 5 seconds. This might be due to filesystem latency. If that is the case, consider to increase the wait time with --latency-wait:
+/lustre/BIF/nobackup/passa006/data/results
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake/log/2023-02-04T151451.109599.snakemake.log

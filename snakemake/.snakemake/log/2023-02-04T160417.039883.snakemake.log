@@ -1,0 +1,718 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 32
+Rules claiming more threads will be scaled down.
+Job stats:
+job       count    min threads    max threads
+------  -------  -------------  -------------
+all           1              1              1
+blastx       35              1              1
+total        36              1              1
+
+Select jobs to execute...
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr7.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr7.fasta_blastx_out
+    jobid: 29
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr7.fasta_blastx_out
+    wildcards: sample=chr7.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr13.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr13.fasta_blastx_out
+    jobid: 22
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr13.fasta_blastx_out
+    wildcards: sample=chr13.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000003.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000003.fasta_blastx_out
+    jobid: 9
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000003.fasta_blastx_out
+    wildcards: sample=SPEXI_scaffold_000003.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000004.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000004.fasta_blastx_out
+    jobid: 6
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000004.fasta_blastx_out
+    wildcards: sample=SPEXI_scaffold_000004.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr3.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr3.fasta_blastx_out
+    jobid: 2
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr3.fasta_blastx_out
+    wildcards: sample=chr3.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr28.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr28.fasta_blastx_out
+    jobid: 30
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr28.fasta_blastx_out
+    wildcards: sample=chr28.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chrZ.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chrZ.fasta_blastx_out
+    jobid: 23
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chrZ.fasta_blastx_out
+    wildcards: sample=chrZ.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr18.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr18.fasta_blastx_out
+    jobid: 10
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr18.fasta_blastx_out
+    wildcards: sample=chr18.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr6.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr6.fasta_blastx_out
+    jobid: 13
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr6.fasta_blastx_out
+    wildcards: sample=chr6.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr25.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr25.fasta_blastx_out
+    jobid: 3
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr25.fasta_blastx_out
+    wildcards: sample=chr25.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr11.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr11.fasta_blastx_out
+    jobid: 31
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr11.fasta_blastx_out
+    wildcards: sample=chr11.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr22.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr22.fasta_blastx_out
+    jobid: 24
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr22.fasta_blastx_out
+    wildcards: sample=chr22.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr26.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr26.fasta_blastx_out
+    jobid: 17
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr26.fasta_blastx_out
+    wildcards: sample=chr26.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr9.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr9.fasta_blastx_out
+    jobid: 4
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr9.fasta_blastx_out
+    wildcards: sample=chr9.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr27.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr27.fasta_blastx_out
+    jobid: 32
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr27.fasta_blastx_out
+    wildcards: sample=chr27.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr30.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr30.fasta_blastx_out
+    jobid: 25
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr30.fasta_blastx_out
+    wildcards: sample=chr30.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr14.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr14.fasta_blastx_out
+    jobid: 18
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr14.fasta_blastx_out
+    wildcards: sample=chr14.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr4.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr4.fasta_blastx_out
+    jobid: 7
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr4.fasta_blastx_out
+    wildcards: sample=chr4.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr10.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr10.fasta_blastx_out
+    jobid: 5
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr10.fasta_blastx_out
+    wildcards: sample=chr10.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr24.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr24.fasta_blastx_out
+    jobid: 33
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr24.fasta_blastx_out
+    wildcards: sample=chr24.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr1.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr1.fasta_blastx_out
+    jobid: 26
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr1.fasta_blastx_out
+    wildcards: sample=chr1.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr17.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr17.fasta_blastx_out
+    jobid: 34
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr17.fasta_blastx_out
+    wildcards: sample=chr17.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr8.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr8.fasta_blastx_out
+    jobid: 27
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr8.fasta_blastx_out
+    wildcards: sample=chr8.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr23.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr23.fasta_blastx_out
+    jobid: 20
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr23.fasta_blastx_out
+    wildcards: sample=chr23.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr29.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr29.fasta_blastx_out
+    jobid: 8
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr29.fasta_blastx_out
+    wildcards: sample=chr29.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000002.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000002.fasta_blastx_out
+    jobid: 12
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000002.fasta_blastx_out
+    wildcards: sample=SPEXI_scaffold_000002.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr2.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr2.fasta_blastx_out
+    jobid: 14
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr2.fasta_blastx_out
+    wildcards: sample=chr2.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr20.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr20.fasta_blastx_out
+    jobid: 35
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr20.fasta_blastx_out
+    wildcards: sample=chr20.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr12.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr12.fasta_blastx_out
+    jobid: 28
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr12.fasta_blastx_out
+    wildcards: sample=chr12.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr5.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr5.fasta_blastx_out
+    jobid: 21
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr5.fasta_blastx_out
+    wildcards: sample=chr5.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr21.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr21.fasta_blastx_out
+    jobid: 11
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr21.fasta_blastx_out
+    wildcards: sample=chr21.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:04:18 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr15.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr15.fasta_blastx_out
+    jobid: 36
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr15.fasta_blastx_out
+    wildcards: sample=chr15.fasta
+    resources: tmpdir=/tmp
+
+Terminating processes on user request, this might take some time.
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+Error in rule blastx:
+    jobid: 36
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr15.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr15.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr15.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr15.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+Error in rule blastx:
+    jobid: 11
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr21.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr21.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr21.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr21.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 32
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr27.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr27.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr27.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr27.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+Error in rule blastx:
+    jobid: 24
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr22.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr22.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr22.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr22.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+Error in rule blastx:
+    jobid: 4
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr9.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr9.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr9.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr9.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+Error in rule blastx:
+    jobid: 33
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr24.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr24.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr24.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr24.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+Error in rule blastx:
+    jobid: 6
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000004.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000004.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000004.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000004.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+[Sat Feb  4 16:04:52 2023]
+Error in rule blastx:
+    jobid: 14
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr2.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr2.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr2.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr2.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 8
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr29.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr29.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr29.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr29.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 27
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr8.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr8.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr8.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr8.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 17
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr26.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr26.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr26.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr26.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 3
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr25.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr25.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr25.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr25.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 5
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr10.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr10.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr10.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr10.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 7
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr4.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr4.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr4.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr4.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 28
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr12.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr12.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr12.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr12.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 30
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr28.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr28.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr28.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr28.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 2
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr3.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr3.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr3.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr3.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 25
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr30.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr30.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr30.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr30.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 9
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000003.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000003.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000003.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000003.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 31
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr11.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr11.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr11.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr11.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 34
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr17.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr17.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr17.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr17.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 22
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr13.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr13.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr13.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr13.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 21
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr5.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr5.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr5.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr5.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 26
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr1.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr1.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr1.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr1.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 35
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr20.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr20.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr20.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr20.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 10
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr18.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr18.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr18.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr18.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 18
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr14.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr14.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr14.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr14.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 20
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr23.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr23.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr23.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr23.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 12
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000002.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000002.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000002.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000002.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 13
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr6.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr6.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr6.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr6.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 23
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chrZ.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chrZ.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chrZ.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chrZ.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule blastx:
+    jobid: 29
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr7.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr7.fasta_blastx_out
+    shell:
+        
+		cd /lustre/BIF/nobackup/passa006/data/viral_db
+		blastx -query /lustre/BIF/nobackup/passa006/data/split_ref/chr7.fasta -db /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta -evalue 1e-6 		-num_threads 8 -outfmt '6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen' -out /lustre/BIF/nobackup/passa006/data/results/chr7.fasta_blastx_out
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Complete log: .snakemake/log/2023-02-04T160417.039883.snakemake.log

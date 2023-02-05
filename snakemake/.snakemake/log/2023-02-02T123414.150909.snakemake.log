@@ -1,0 +1,31 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 40
+Rules claiming more threads will be scaled down.
+Job stats:
+job             count    min threads    max threads
+------------  -------  -------------  -------------
+makedatabase        1              1              1
+total               1              1              1
+
+Select jobs to execute...
+
+[Thu Feb  2 12:34:15 2023]
+rule makedatabase:
+    input: ../data/U-RVDBv25.0-prot.fasta
+    output: ../data/viral_db
+    jobid: 0
+    reason: Missing output files: ../data/viral_db
+    resources: tmpdir=/tmp
+
+ImproperOutputException in rule makedatabase in file /lustre/BIF/nobackup/passa006/snakemake/Snakefile, line 3:
+Outputs of incorrect type (directories when expecting files or vice versa). Output directories must be flagged with directory(). for rule makedatabase:
+    output: ../data/viral_db
+    affected files:
+        ../data/viral_db
+Removing output files of failed job makedatabase since they might be corrupted:
+../data/viral_db
+Skipped removing non-empty directory ../data/viral_db
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake/log/2023-02-02T123414.150909.snakemake.log

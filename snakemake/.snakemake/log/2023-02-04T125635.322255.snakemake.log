@@ -1,0 +1,32 @@
+Building DAG of jobs...
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	split_reference_genome
+	1	write_config
+	3
+
+rule write_config:
+    input: /lustre/BIF/nobackup/passa006/data/GCA_902829305.4_PGI_SPEXI_v6_genomic.fna, /lustre/BIF/nobackup/passa006/data/U-RVDBv25.0-prot.fasta
+    output: config.yaml
+    jobid: 1
+
+Finished job 1.
+1 of 3 steps (33%) done
+
+rule split_reference_genome:
+    input: /lustre/BIF/nobackup/passa006/data/GCA_902829305.4_PGI_SPEXI_v6_genomic.fna
+    output: ../data/split_ref/chr1.fasta
+    jobid: 2
+
+Finished job 2.
+2 of 3 steps (67%) done
+
+localrule all:
+    input: ../data/split_ref/chr1.fasta, config.yaml
+    jobid: 0
+
+Finished job 0.
+3 of 3 steps (100%) done

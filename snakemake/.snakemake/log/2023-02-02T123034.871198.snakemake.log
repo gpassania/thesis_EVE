@@ -1,0 +1,6 @@
+Building DAG of jobs...
+MissingInputException in rule makedatabase in file /lustre/BIF/nobackup/passa006/snakemake/Snakefile, line 3:
+Missing input files for rule makedatabase:
+    output: ../data/viral_db
+    affected files:
+        ../data/viral_db/U-RVDBv25.0-prot.fasta

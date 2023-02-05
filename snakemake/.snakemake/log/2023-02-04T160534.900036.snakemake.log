@@ -1,0 +1,20 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 32
+Rules claiming more threads will be scaled down.
+Job stats:
+job                          count    min threads    max threads
+-------------------------  -------  -------------  -------------
+all                              1              1              1
+run_configurated_pipeline        1              1              1
+total                            2              1              1
+
+Select jobs to execute...
+
+[Sat Feb  4 16:05:35 2023]
+rule run_configurated_pipeline:
+    output: /lustre/BIF/nobackup/passa006/data/results
+    jobid: 3
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results
+    resources: tmpdir=/tmp
+

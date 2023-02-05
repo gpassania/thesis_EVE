@@ -1,0 +1,6 @@
+Building DAG of jobs...
+MissingInputException in rule test in file /lustre/BIF/nobackup/passa006/snakemake/testsnake, line 6:
+Missing input files for rule test:
+    output: test
+    affected files:
+        etest

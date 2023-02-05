@@ -1,0 +1,41 @@
+mainpath: /lustre/BIF/nobackup/passa006/data/
+reference: /lustre/BIF/nobackup/passa006/data/GCA_902829305.4_PGI_SPEXI_v6_genomic.fna
+database: /lustre/BIF/nobackup/passa006/data/U-RVDBv25.0-prot.fasta
+fastq_1: test
+fastq_2: test2
+samples:
+ chr3.fasta: chr3.fasta
+ chr25.fasta: chr25.fasta
+ chr9.fasta: chr9.fasta
+ chr10.fasta: chr10.fasta
+ SPEXI_scaffold_000004.fasta: SPEXI_scaffold_000004.fasta
+ chr4.fasta: chr4.fasta
+ chr29.fasta: chr29.fasta
+ SPEXI_scaffold_000003.fasta: SPEXI_scaffold_000003.fasta
+ chr18.fasta: chr18.fasta
+ chr21.fasta: chr21.fasta
+ SPEXI_scaffold_000002.fasta: SPEXI_scaffold_000002.fasta
+ chr6.fasta: chr6.fasta
+ chr2.fasta: chr2.fasta
+ chr16.fasta: chr16.fasta
+ SPEXI_scaffold_000001.fasta: SPEXI_scaffold_000001.fasta
+ chr26.fasta: chr26.fasta
+ chr14.fasta: chr14.fasta
+ chr19.fasta: chr19.fasta
+ chr23.fasta: chr23.fasta
+ chr5.fasta: chr5.fasta
+ chr13.fasta: chr13.fasta
+ chrZ.fasta: chrZ.fasta
+ chr22.fasta: chr22.fasta
+ chr30.fasta: chr30.fasta
+ chr1.fasta: chr1.fasta
+ chr8.fasta: chr8.fasta
+ chr12.fasta: chr12.fasta
+ chr7.fasta: chr7.fasta
+ chr28.fasta: chr28.fasta
+ chr11.fasta: chr11.fasta
+ chr27.fasta: chr27.fasta
+ chr24.fasta: chr24.fasta
+ chr17.fasta: chr17.fasta
+ chr20.fasta: chr20.fasta
+ chr15.fasta: chr15.fasta

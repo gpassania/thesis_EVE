@@ -1,0 +1,332 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 32
+Rules claiming more threads will be scaled down.
+Job stats:
+job       count    min threads    max threads
+------  -------  -------------  -------------
+all           1              1              1
+blastx       35              1              1
+total        36              1              1
+
+Select jobs to execute...
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr7.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr7.fasta_blastx_out
+    jobid: 29
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr7.fasta_blastx_out
+    wildcards: sample=chr7.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr13.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr13.fasta_blastx_out
+    jobid: 22
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr13.fasta_blastx_out
+    wildcards: sample=chr13.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000003.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000003.fasta_blastx_out
+    jobid: 9
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000003.fasta_blastx_out
+    wildcards: sample=SPEXI_scaffold_000003.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000004.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000004.fasta_blastx_out
+    jobid: 6
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000004.fasta_blastx_out
+    wildcards: sample=SPEXI_scaffold_000004.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr3.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr3.fasta_blastx_out
+    jobid: 2
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr3.fasta_blastx_out
+    wildcards: sample=chr3.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr28.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr28.fasta_blastx_out
+    jobid: 30
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr28.fasta_blastx_out
+    wildcards: sample=chr28.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chrZ.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chrZ.fasta_blastx_out
+    jobid: 23
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chrZ.fasta_blastx_out
+    wildcards: sample=chrZ.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr18.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr18.fasta_blastx_out
+    jobid: 10
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr18.fasta_blastx_out
+    wildcards: sample=chr18.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr6.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr6.fasta_blastx_out
+    jobid: 13
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr6.fasta_blastx_out
+    wildcards: sample=chr6.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr25.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr25.fasta_blastx_out
+    jobid: 3
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr25.fasta_blastx_out
+    wildcards: sample=chr25.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr11.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr11.fasta_blastx_out
+    jobid: 31
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr11.fasta_blastx_out
+    wildcards: sample=chr11.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr22.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr22.fasta_blastx_out
+    jobid: 24
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr22.fasta_blastx_out
+    wildcards: sample=chr22.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr26.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr26.fasta_blastx_out
+    jobid: 17
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr26.fasta_blastx_out
+    wildcards: sample=chr26.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr9.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr9.fasta_blastx_out
+    jobid: 4
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr9.fasta_blastx_out
+    wildcards: sample=chr9.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr27.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr27.fasta_blastx_out
+    jobid: 32
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr27.fasta_blastx_out
+    wildcards: sample=chr27.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr30.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr30.fasta_blastx_out
+    jobid: 25
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr30.fasta_blastx_out
+    wildcards: sample=chr30.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr14.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr14.fasta_blastx_out
+    jobid: 18
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr14.fasta_blastx_out
+    wildcards: sample=chr14.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr4.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr4.fasta_blastx_out
+    jobid: 7
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr4.fasta_blastx_out
+    wildcards: sample=chr4.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr10.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr10.fasta_blastx_out
+    jobid: 5
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr10.fasta_blastx_out
+    wildcards: sample=chr10.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr24.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr24.fasta_blastx_out
+    jobid: 33
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr24.fasta_blastx_out
+    wildcards: sample=chr24.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr1.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr1.fasta_blastx_out
+    jobid: 26
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr1.fasta_blastx_out
+    wildcards: sample=chr1.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr17.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr17.fasta_blastx_out
+    jobid: 34
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr17.fasta_blastx_out
+    wildcards: sample=chr17.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr8.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr8.fasta_blastx_out
+    jobid: 27
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr8.fasta_blastx_out
+    wildcards: sample=chr8.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr23.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr23.fasta_blastx_out
+    jobid: 20
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr23.fasta_blastx_out
+    wildcards: sample=chr23.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr29.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr29.fasta_blastx_out
+    jobid: 8
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr29.fasta_blastx_out
+    wildcards: sample=chr29.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/SPEXI_scaffold_000002.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000002.fasta_blastx_out
+    jobid: 12
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/SPEXI_scaffold_000002.fasta_blastx_out
+    wildcards: sample=SPEXI_scaffold_000002.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr2.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr2.fasta_blastx_out
+    jobid: 14
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr2.fasta_blastx_out
+    wildcards: sample=chr2.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr20.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr20.fasta_blastx_out
+    jobid: 35
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr20.fasta_blastx_out
+    wildcards: sample=chr20.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr12.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr12.fasta_blastx_out
+    jobid: 28
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr12.fasta_blastx_out
+    wildcards: sample=chr12.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr5.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr5.fasta_blastx_out
+    jobid: 21
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr5.fasta_blastx_out
+    wildcards: sample=chr5.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr21.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr21.fasta_blastx_out
+    jobid: 11
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr21.fasta_blastx_out
+    wildcards: sample=chr21.fasta
+    resources: tmpdir=/tmp
+
+
+[Sat Feb  4 16:05:38 2023]
+rule blastx:
+    input: /lustre/BIF/nobackup/passa006/data/split_ref/chr15.fasta, /lustre/BIF/nobackup/passa006/data/viral_db, /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/results/chr15.fasta_blastx_out
+    jobid: 36
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/results/chr15.fasta_blastx_out
+    wildcards: sample=chr15.fasta
+    resources: tmpdir=/tmp
+

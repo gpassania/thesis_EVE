@@ -1,0 +1,40 @@
+configfile: "config.yaml"
+
+#rules
+rule all:
+	input:
+		config["mainpath"] + "viral_db/",
+		expand(config["mainpath"] + "results/{sample}_blastx_out", sample = config["samples"])
+		
+rule makedatabase:
+	input:
+		db_fasta = config["database"]
+	output:
+		config["mainpath"] + "viral_db/"
+	params:
+		"prot"
+	shell:
+		"""
+		mkdir {output}
+		makeblastdb -in {input.db_fasta} -dbtype {params}
+		mv {input}.* {output}
+		cp {input} {output}
+		"""
+
+rule blastx:
+	input:
+		ref = config["mainpath"]+ "split_ref/{sample}",
+		db_path = config["mainpath"] + "viral_db/",
+		db_name = config["mainpath"] + "viral_db/" + config["database"].split("/")[-1]
+	output:
+		outfile = config["mainpath"] + "results/{sample}_blastx_out"
+	params:
+		outfmt = "'6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen'",
+		evalue = "1e-6",
+		threads = "8"
+	shell:
+		"""
+		cd {input.db_path}
+		blastx -query {input.ref} -db {input.db_name} -evalue {params.evalue} \
+		-num_threads {params.threads} -outfmt {params.outfmt} -out {output.outfile}
+		"""

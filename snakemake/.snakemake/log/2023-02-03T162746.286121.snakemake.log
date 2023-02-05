@@ -1,0 +1,36 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job      count    min threads    max threads
+-----  -------  -------------  -------------
+all          1              1              1
+test         1              1              1
+total        2              1              1
+
+Select jobs to execute...
+
+[Fri Feb  3 16:27:49 2023]
+rule test:
+    output: test
+    jobid: 2
+    reason: Missing output files: test
+    resources: tmpdir=/tmp
+
+[Fri Feb  3 16:27:52 2023]
+Finished job 2.
+1 of 2 steps (50%) done
+Select jobs to execute...
+
+[Fri Feb  3 16:27:52 2023]
+localrule all:
+    input: config.yaml, test
+    jobid: 0
+    reason: Input files updated by another job: test
+    resources: tmpdir=/tmp
+
+[Fri Feb  3 16:27:52 2023]
+Finished job 0.
+2 of 2 steps (100%) done
+Complete log: .snakemake/log/2023-02-03T162746.286121.snakemake.log

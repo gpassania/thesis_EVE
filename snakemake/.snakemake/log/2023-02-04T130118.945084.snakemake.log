@@ -1,0 +1,31 @@
+Building DAG of jobs...
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	split_reference_genome
+	1	write_config
+	3
+
+rule split_reference_genome:
+    input: /lustre/BIF/nobackup/passa006/data/GCA_902829305.4_PGI_SPEXI_v6_genomic.fna
+    output: ../data/split_ref/chr1.fasta
+    jobid: 1
+    priority: 10
+
+Error in rule split_reference_genome:
+    jobid: 1
+    output: ../data/split_ref/chr1.fasta
+
+RuleException:
+CalledProcessError in line 27 of /lustre/BIF/nobackup/passa006/snakemake/testsnake:
+Command ' set -euo pipefail;  
+		python3 ../snakemake/scripts/split_ref.py /lustre/BIF/nobackup/passa006/data/GCA_902829305.4_PGI_SPEXI_v6_genomic.fna
+		mv chr* ../data/split_ref/
+		mv SPEXI* ../data/split_ref/ ' returned non-zero exit status 1.
+  File "/lustre/BIF/nobackup/passa006/snakemake/testsnake", line 27, in __rule_split_reference_genome
+  File "/usr/lib/python3.6/concurrent/futures/thread.py", line 56, in run
+Will exit after finishing currently running jobs.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake/log/2023-02-04T130118.945084.snakemake.log

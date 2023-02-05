@@ -1,0 +1,3 @@
+NameError in line 11 of /lustre/BIF/nobackup/passa006/snakemake/Snakefile:
+name 'directory' is not defined
+  File "/lustre/BIF/nobackup/passa006/snakemake/Snakefile", line 11, in <module>

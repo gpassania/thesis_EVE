@@ -1,0 +1,40 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 40
+Rules claiming more threads will be scaled down.
+Job stats:
+job             count    min threads    max threads
+------------  -------  -------------  -------------
+all                 1              1              1
+blastx              1              1              1
+makedatabase        1              1              1
+total               3              1              1
+
+Select jobs to execute...
+
+[Thu Feb  2 15:09:30 2023]
+rule makedatabase:
+    input: /lustre/BIF/nobackup/passa006/data/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/viral_db
+    jobid: 1
+    reason: Missing output files: /lustre/BIF/nobackup/passa006/data/viral_db
+    resources: tmpdir=/tmp
+
+[Thu Feb  2 15:27:41 2023]
+Error in rule makedatabase:
+    jobid: 1
+    input: /lustre/BIF/nobackup/passa006/data/U-RVDBv25.0-prot.fasta
+    output: /lustre/BIF/nobackup/passa006/data/viral_db
+    shell:
+        
+		mkdir /lustre/BIF/nobackup/passa006/data/viral_db
+		makeblastdb -in /lustre/BIF/nobackup/passa006/data/U-RVDBv25.0-prot.fasta -dbtype prot
+		cp /lustre/BIF/nobackup/passa006/data/viral_db.* /lustre/BIF/nobackup/passa006/data/viral_db
+		
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Removing output files of failed job makedatabase since they might be corrupted:
+/lustre/BIF/nobackup/passa006/data/viral_db
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake/log/2023-02-02T150929.318311.snakemake.log

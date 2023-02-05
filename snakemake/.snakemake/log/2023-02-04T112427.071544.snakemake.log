@@ -1,0 +1,4 @@
+Building DAG of jobs...
+MissingInputException in line 4 of /lustre/BIF/nobackup/passa006/snakemake/testsnake:
+Missing input files for rule all:
+chr1.fasta

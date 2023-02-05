@@ -1,0 +1,6 @@
+Building DAG of jobs...
+MissingInputException in rule blastx in file /lustre/BIF/nobackup/passa006/snakemake/Snakefile, line 23:
+Missing input files for rule blastx:
+    output: /lustre/BIF/nobackup/passa006/data/results/blastx_out
+    affected files:
+        /lustre/BIF/nobackup/passa006/data/viral_db/U-RVDBv25.0-prot.fasta
