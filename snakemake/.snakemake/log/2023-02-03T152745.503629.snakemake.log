@@ -1,3 +1,0 @@
-Building DAG of jobs...
-CyclicGraphException in rule testing_rule in file /lustre/BIF/nobackup/passa006/snakemake/testsnake, line 6:
-Cyclic dependency on rule testing_rule.

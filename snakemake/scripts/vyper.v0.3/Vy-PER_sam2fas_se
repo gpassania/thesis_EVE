@@ -1,0 +1,309 @@
+#!/bin/env python
+##!/usr/bin/python
+
+import sys
+import os.path
+import time
+import resource
+
+###########################################################################################################
+#
+#  Vy-PER - Virus integration detection bY Paired End Reads 
+#
+#  Vy-PER helps to identify reads from paired-end sequencing, where one end aligns to host DNA 
+#  (e.g. a human genome), and the other end aligns to e.g. a virus genome (or any other non-host genome).
+#
+#  Vy-PER_sam2fas_se is simple converter from sam-format to FASTA or fastq formats.
+#  (because bam2fastq does not convert paired-end reads where just one read is available)
+#  with option to filter out reads using a third input file
+#
+###########################################################################################################
+
+def setlimits():
+	#############################################################################
+	# sets resource limits (mandatory for job interoperability on cluster)
+	# to 10MB Stack + 1GB data + 1GB RLIMIT_RSS
+	# first steps taken from
+	# http://docs.python.org/library/resource.html and
+	# http://www.doughellmann.com/PyMOTW/resource/
+	# Author: MICHAEL FORSTER m.forster@ikmb.uni-kiel.de
+	# Version: 13 September 2010
+	#############################################################################
+
+	# usage = resource.getrusage(resource.RUSAGE_SELF)
+
+	#print ' usage ='
+	#print usage
+	
+	#for name, desc in [
+	#('RLIMIT_CORE', 'core file size'),
+	#('RLIMIT_CPU',  'CPU time'),
+	#('RLIMIT_FSIZE', 'file size'),
+	#('RLIMIT_DATA', 'heap size'),
+	#('RLIMIT_STACK', 'stack size'),
+	#('RLIMIT_RSS', 'resident set size'),
+	#('RLIMIT_NPROC', 'number of processes'),
+	#('RLIMIT_NOFILE', 'number of open files'),
+	#('RLIMIT_MEMLOCK', 'lockable memory address'),
+	#]:
+	#	limit_num = getattr(resource, name)
+	#	soft, hard = resource.getrlimit(limit_num)
+	#	print 'Maximum %-25s (%-15s) : %20s %20s' % (desc, name, soft, hard)
+
+	#############################################################################
+	# Adjust the maximum size (in bytes) of the process's heap
+	#############################################################################
+
+	soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+	#print 'Data/heap limit starts as  :', soft
+
+	# 1GB heap:
+	newheap=1024*1024*1024
+
+	resource.setrlimit(resource.RLIMIT_DATA, (newheap, hard))
+
+	soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+	#print 'Data/heap limit changed to :', soft
+
+	#############################################################################
+	# ca 10MB original stack changed to exactly 10MB stack:
+	#############################################################################
+
+	#newstack=10*1024*1024+1
+	newstack=10*1024*1024
+	soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+	#print 'Stack limit starts as  :', soft
+	resource.setrlimit(resource.RLIMIT_STACK, (newstack, hard))
+	soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+	#print 'Stack limit changed to :', soft
+
+	#############################################################################
+	# 1GB RLIMIT_RSS
+	# "Maximale resident set size in Byte. Bei Speicherengpaessen entzieht der Kern
+	# den Prozessen, die den resident set size ueberschreiten, den zuviel
+	# angeforderten Speicher."
+	# http://pronix.linuxdelta.de/C/Linuxprogrammierung/Linuxsystemprogrammieren_C_Kurs_Kapitel3a.shtml
+	#############################################################################
+
+	newrss=1024*1024*1024
+	soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
+	#print 'RLIMIT_RSS starts as  :', soft
+	resource.setrlimit(resource.RLIMIT_RSS, (newrss, hard))
+	soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
+	#print 'RLIMIT_RSS changed to :', soft
+
+	#sys.exit()
+
+
+def vyper_sam2fas (filtfile, filtfiletype, nmin, infile, outfile, outfiletype):
+	'''        #######################################################################################
+	#  Vy-PER_sam2fas_se v0.3.2
+	#######################################################################################
+	#  Vy-PER - Virus integration detection bY Paired End Reads  
+	#
+	#  Vy-PER helps to identify reads from paired-end sequencing, where one end aligns
+	#  to host DNA (e.g. a human genome), and the other end aligns to e.g. a virus genome
+	#  (or to any other non-host genome).
+	#
+	#  Vy-PER_sam2fas_se converts a single-end sam file to fasta or fastq, and 
+	#  optionally filters STR-reads.
+	#######################################################################################
+	#  Vy-PER_sam2fas_se [-fp3 pho3] infile  outfile  [outtype]
+	#
+	#  [] optional
+	# 
+	#  [-fp3      filter away reads with STRs using a phobos-output-3 file
+	#   pho3      phobos output-3 file (phobos --outputFormat 3 fastafile outfile)
+	#   nmin ]    min number of non-STR nucleotides required to be in a read (e.g. 35)
+	#
+	#   infile    input file name (SAM format) 
+	#   outfile   output file name (fasta or fastq format) 
+	#
+	#   [outtype] fasta or fastq
+	#             sam2fas looks at the specified output file name to determine the format.
+	#             To use an arbitrary outfile name, the outtype option must be used.
+	#
+	#######################################################################################
+	#  Michael Forster                                        m.forster@ikmb.uni-kiel.de         
+	#  6-7 Nov 2012
+	#######################################################################################
+	'''
+	
+	print 'infile:   ',infile
+	print 'outfile:  ',outfile
+		
+	#######################################################################################
+	# Create a dictionary of reads to check against the user-criteria for export to fasta/fastq
+	#######################################################################################
+	
+	if filtfiletype == "phobos3":
+		#	The user specified a phobos file of reads and their STR-content
+		print 'pho3 file:',filtfile
+		print 'nmin:     ',nmin
+		strlen = {}
+		inf=open (filtfile, 'r')
+		while True:
+			header=inf.readline()
+			if not header.startswith("#"):
+				# header comment lines are over
+				break
+				
+		cols=header.split()
+		# column "length" in table header
+		#print header
+		#print cols
+		length=cols.index("length")
+		#print 'length', length
+					
+		while True:
+			line=inf.readline()
+			if len(line) == 0 or line.startswith("## Finished") :
+				# EOF reached
+				break
+			line=line.strip()
+			cols=line.split()
+			# length of STR region in this read:
+			try:
+				if not cols[0] in strlen:
+					strlen[cols[0]] = int(cols[length])
+			except:
+				print line
+				print cols[length]
+				sys.exit()
+		inf.close()
+	#print strlen
+	
+	#######################################################################################
+	# open output file
+	#######################################################################################
+
+	out = open(outfile,"w")
+
+	###################################################################################
+	# Extract reads from SAM file to fasta/fastq file
+	###################################################################################
+
+	inf=open (infile, 'r')
+	while True:
+		line=inf.readline()
+		if len(line) == 0:
+			# EOF reached
+			break
+		if line.startswith('#'):
+			continue
+		line=line.strip()
+		cols = line.split('\t')
+		
+		if filtfiletype == "phobos3":
+			# check length of non-STR region of this read:
+			try:
+				lremain = len(cols[9]) - strlen[cols[0]]
+				if lremain < nmin:
+					# the STR region in this read is too long, so continue to the next read
+					continue
+			except:
+				# This read is not in the phobos file, e.g. because phobos did not identify STRs
+				dummy=1
+				
+		# write read name, sequence, and for fastq - qualities - to output file:
+		try:
+			if outfiletype == "fasta":
+				out.write( '>%s\n' % (cols[0]) )
+				out.write( '%s\n' % (cols[9]) )
+			else:
+				# fastq
+				out.write( '@%s\n' % (cols[0]) )
+				out.write( '%s\n+\n' % (cols[9]) )
+				out.write( '%s\n' % (cols[10]) )
+		except:
+			print '*** Error: Bad format in SAM file:  %s\n***        Line is:\n%s\n' % (infile,line)
+			sys.exit()
+
+	inf.close()
+	out.close()
+
+###########################################################################################################
+#
+# the actual main
+#
+###########################################################################################################
+
+###########################################################################################################
+# set resource limits:
+###########################################################################################################
+
+setlimits()
+
+###########################################################################################################
+# Get command line arguments
+#
+# Vy-PER_sam2fas_se [-fp3 pho3 nmin] infile  outfile  [outtype]
+###########################################################################################################
+
+fasta = ['fasta', 'FASTA', 'fas', 'FAS', 'fa', 'FA']
+fastq = ['fastq', 'FASTQ']
+filtfile = '0'
+filtfiletype = '0'
+nmin = 101
+k = 0
+
+nargs = len(sys.argv)
+if nargs < 3:
+	# Too few arguments
+	print vyper_sam2fas.__doc__
+	sys.exit()
+	
+if sys.argv[1].startswith("-f"):
+	# Optional filtering of reads with STRs
+	if sys.argv[1] == "-fp3":
+		filtfiletype = "phobos3"
+		filtfile = sys.argv[2]
+		try:
+			nmin = int(sys.argv[3])
+		except:
+			print vyper_sam2fas.__doc__
+			sys.exit('\n***ERROR: nmin %s must be an integer' % (sys.argv[3]) )
+		k = 3
+	else:
+		print vyper_sam2fas.__doc__
+		sys.exit('\n***ERROR: unknown filter %s' % (sys.argv[1]) )
+
+if nargs-k == 3:
+	# Output file type implicitly given in output file name:
+	outfile = sys.argv[k+2]	
+	extension = os.path.splitext(outfile)[1][1:]
+	if extension in fasta:
+		outfiletype = 'fasta'
+	elif extension in fastq:
+		outfiletype = 'fastq'
+	else:
+		print vyper_sam2fas.__doc__
+		print '\n***ERROR: extension %s of file %s is neither fasta nor fastq' % (extension, outfile)
+		sys.exit('***       please specify [outtype] or change outfile name')
+elif nargs-k == 4:
+	# Explicite output file type given in optional argument
+	outfile = sys.argv[k+2]
+	outtype = sys.argv[k+3]
+	if outtype in fasta:
+		outfiletype = 'fasta'
+	elif outtype in fastq:
+		outfiletype = 'fastq'
+	else:
+		print vyper_sam2fas.__doc__
+		print '\n***ERROR:  [outtype] %s is neither fasta nor fastq' % (outtype)
+		sys.exit('***       please specify [outtype] correctly')
+else:
+	# Wrong number of arguments
+	print vyper_sam2fas.__doc__
+	sys.exit()
+
+infile = sys.argv[k+1]
+
+###########################################################################################################
+# call main procedure
+###########################################################################################################
+
+vyper_sam2fas (filtfile, filtfiletype, nmin, infile, outfile, outfiletype)
+print('*** Vy-PER_sam2fas_se completed successfully')
+
+

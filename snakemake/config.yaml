@@ -1,41 +1,38 @@
-mainpath: /lustre/BIF/nobackup/passa006/data/
-reference: /lustre/BIF/nobackup/passa006/data/GCA_902829305.4_PGI_SPEXI_v6_genomic.fna
-database: /lustre/BIF/nobackup/passa006/data/U-RVDBv25.0-prot.fasta
-fastq_1: test
-fastq_2: test2
-samples:
- chr3.fasta: chr3.fasta
- chr25.fasta: chr25.fasta
- chr9.fasta: chr9.fasta
- chr10.fasta: chr10.fasta
- SPEXI_scaffold_000004.fasta: SPEXI_scaffold_000004.fasta
- chr4.fasta: chr4.fasta
- chr29.fasta: chr29.fasta
- SPEXI_scaffold_000003.fasta: SPEXI_scaffold_000003.fasta
- chr18.fasta: chr18.fasta
- chr21.fasta: chr21.fasta
- SPEXI_scaffold_000002.fasta: SPEXI_scaffold_000002.fasta
- chr6.fasta: chr6.fasta
- chr2.fasta: chr2.fasta
- chr16.fasta: chr16.fasta
- SPEXI_scaffold_000001.fasta: SPEXI_scaffold_000001.fasta
- chr26.fasta: chr26.fasta
- chr14.fasta: chr14.fasta
- chr19.fasta: chr19.fasta
- chr23.fasta: chr23.fasta
- chr5.fasta: chr5.fasta
- chr13.fasta: chr13.fasta
- chrZ.fasta: chrZ.fasta
- chr22.fasta: chr22.fasta
- chr30.fasta: chr30.fasta
- chr1.fasta: chr1.fasta
- chr8.fasta: chr8.fasta
- chr12.fasta: chr12.fasta
- chr7.fasta: chr7.fasta
- chr28.fasta: chr28.fasta
- chr11.fasta: chr11.fasta
- chr27.fasta: chr27.fasta
- chr24.fasta: chr24.fasta
- chr17.fasta: chr17.fasta
- chr20.fasta: chr20.fasta
- chr15.fasta: chr15.fasta
+species:
+    litura
+mainpath:
+    /lustre/BIF/nobackup/passa006/thesis_EVE/data/
+database:
+    /lustre/BIF/nobackup/passa006/thesis_EVE/data/databases/U-RVDBv25.0.fasta
+scripts_path:
+    /lustre/BIF/nobackup/passa006/thesis_EVE/snakemake/scripts/
+database_prot:
+    /lustre/BIF/nobackup/passa006/thesis_EVE/data/databases/U-RVDBv25.0-prot.fasta
+representative_ref:
+    /lustre/BIF/nobackup/passa006/thesis_EVE/data/reference/litura/GCA_002706865.3_ASM270686v3_genomic.fna
+reference_path:
+    /lustre/BIF/nobackup/passa006/thesis_EVE/data/reference/litura
+fastq_files_path:
+    /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/
+
+refgenomes:
+    GCA_002706865.3_ASM270686v3_genomic.fna: /lustre/BIF/nobackup/passa006/thesis_EVE/data/reference/litura/GCA_002706865.3_ASM270686v3_genomic.fna
+    
+fastq_names:
+    HN5WTDMXX_103943-024-055_ACGTCGTA-GTTCATGG_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-055_ACGTCGTA-GTTCATGG_L002/HN5WTDMXX_103943-024-055_ACGTCGTA-GTTCATGG_L002
+    HFFV2DSXY_103943-023-116_CTCTACTC-GCCACTTA_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HFFV2DSXY_103943-023-116_CTCTACTC-GCCACTTA_L002/HFFV2DSXY_103943-023-116_CTCTACTC-GCCACTTA_L002
+    HN5WTDMXX_103943-024-049_GCTGTAAG-GCTCTGTA_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-049_GCTGTAAG-GCTCTGTA_L002/HN5WTDMXX_103943-024-049_GCTGTAAG-GCTCTGTA_L002
+    HFFV2DSXY_103943-023-117_CAACCTAG-ACAGACCT_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HFFV2DSXY_103943-023-117_CAACCTAG-ACAGACCT_L002/HFFV2DSXY_103943-023-117_CAACCTAG-ACAGACCT_L002
+    HN5WTDMXX_103943-024-019_CGGTTGTT-CATACCAC_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-019_CGGTTGTT-CATACCAC_L002/HN5WTDMXX_103943-024-019_CGGTTGTT-CATACCAC_L002
+    HN5WTDMXX_103943-024-058_GATTGGAG-TTCTCTCG_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-058_GATTGGAG-TTCTCTCG_L002/HN5WTDMXX_103943-024-058_GATTGGAG-TTCTCTCG_L002
+    HN5WTDMXX_103943-024-054_GTTAAGGC-TCGAAGGT_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-054_GTTAAGGC-TCGAAGGT_L002/HN5WTDMXX_103943-024-054_GTTAAGGC-TCGAAGGT_L002
+    HN5WTDMXX_103943-024-048_TTCGCAGT-TGATCGGA_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-048_TTCGCAGT-TGATCGGA_L002/HN5WTDMXX_103943-024-048_TTCGCAGT-TGATCGGA_L002
+    HFFV2DSXY_103943-023-139_CTAACTCG-TCGTAGTC_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HFFV2DSXY_103943-023-139_CTAACTCG-TCGTAGTC_L002/HFFV2DSXY_103943-023-139_CTAACTCG-TCGTAGTC_L002
+    HN5WTDMXX_103943-024-057_ACGGTCTT-TCCGAGTT_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-057_ACGGTCTT-TCCGAGTT_L002/HN5WTDMXX_103943-024-057_ACGGTCTT-TCCGAGTT_L002
+    HN5WTDMXX_103943-024-050_ATTGCGTG-GCCATAAC_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-050_ATTGCGTG-GCCATAAC_L002/HN5WTDMXX_103943-024-050_ATTGCGTG-GCCATAAC_L002
+    HN5WTDMXX_103943-024-053_GATCCATG-TGGAGTTG_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-053_GATCCATG-TGGAGTTG_L002/HN5WTDMXX_103943-024-053_GATCCATG-TGGAGTTG_L002
+    HN5WTDMXX_103943-024-051_TGATACGC-ACTCGTTG_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-051_TGATACGC-ACTCGTTG_L002/HN5WTDMXX_103943-024-051_TGATACGC-ACTCGTTG_L002
+    HFFV2DSXY_103943-023-118_TGATCGGA-TTCGCAGT_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HFFV2DSXY_103943-023-118_TGATCGGA-TTCGCAGT_L002/HFFV2DSXY_103943-023-118_TGATCGGA-TTCGCAGT_L002
+    HN5WTDMXX_103943-024-056_CTGCGTAT-CGAACTGT_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-056_CTGCGTAT-CGAACTGT_L002/HN5WTDMXX_103943-024-056_CTGCGTAT-CGAACTGT_L002
+    HN5WTDMXX_103943-024-052_CGTCTTGT-TCTCGCAA_L002: /lustre/BIF/nobackup/passa006/thesis_EVE/data/fastq_files/litura/HN5WTDMXX_103943-024-052_CGTCTTGT-TCTCGCAA_L002/HN5WTDMXX_103943-024-052_CGTCTTGT-TCTCGCAA_L002
+    

@@ -1,0 +1,10 @@
+channels:
+ - conda-forge
+ - bioconda
+dependencies:
+ - python=2.7
+ - bedtools=2.25.0
+ - samtools
+ - blast=2.6.0
+ - bwa=0.7.15
+ - trinity

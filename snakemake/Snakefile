@@ -1,40 +1,492 @@
 configfile: "config.yaml"
+print("processing:", config["refgenomes"])
 
-#rules
 rule all:
 	input:
-		config["mainpath"] + "viral_db/",
-		expand(config["mainpath"] + "results/{sample}_blastx_out", sample = config["samples"])
+		"/".join(config["database"].split("/")[:-1]) + "/viral_db.dmnd",
+		expand(config["mainpath"] + "results/blast/{refgenome}/output", refgenome=config["refgenomes"]),
+		expand(config["fastq_files_path"] + "{fastq}/{fastq}_{R}_trimmed.fastq.gz", fastq=config["fastq_names"], R=["R1","R2"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_{R}.sai", fastq=config["fastq_names"], R=["R1","R2"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped.bam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped_sorted.bam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.fasta", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_phobos.fp3", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.0", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.m8", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt",fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/fastafolder", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out.top10.txt", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_vir.txt", fastq=config["fastq_names"]),
+#		expand(config["mainpath"] + "results/vir/{fastq}/OutputFiles/Final_ChimericPairs_Info.txt", fastq=config["fastq_names"]),
+#		expand(config["mainpath"] + "results/vir/{fastq}/OutputFiles/Complete_Dataset_Info.txt", fastq=config["fastq_names"]),
+#		expand(config["reference_path"] + "{refgenome}/{refgenome}.fna.nhr", refgenome=config["refgenomes"])
 		
+
+#################################################################################
+#Detection pipeline
+#################################################################################	
 rule makedatabase:
 	input:
-		db_fasta = config["database"]
+		db_fasta = config["database_prot"]
 	output:
-		config["mainpath"] + "viral_db/"
+		config["mainpath"] + "databases/viral_db.dmnd"
 	params:
-		"prot"
+		scriptpath = config["scripts_path"] + "./diamond" 
 	shell:
 		"""
-		mkdir {output}
-		makeblastdb -in {input.db_fasta} -dbtype {params}
-		mv {input}.* {output}
-		cp {input} {output}
+		{params.scriptpath} makedb --in {input.db_fasta} -d {output} --threads 8
 		"""
 
-rule blastx:
+rule diamond_rvdb:
 	input:
-		ref = config["mainpath"]+ "split_ref/{sample}",
-		db_path = config["mainpath"] + "viral_db/",
-		db_name = config["mainpath"] + "viral_db/" + config["database"].split("/")[-1]
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"]),
+		db_name = config["mainpath"] + "databases/viral_db.dmnd"
 	output:
-		outfile = config["mainpath"] + "results/{sample}_blastx_out"
+		outfile = expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}.blastx", refgenome=config["refgenomes"])
 	params:
-		outfmt = "'6 qseqid qstart qend salltitles evalue qframe pident qcovs sstart send slen'",
+		outfmt = "6 qseqid qstart qend salltitles evalue qframe pident qcovhsp sstart send slen",
 		evalue = "1e-6",
-		threads = "8"
+		threads = "8",
+		scriptpath = config["scripts_path"] + "./diamond" 
 	shell:
 		"""
-		cd {input.db_path}
-		blastx -query {input.ref} -db {input.db_name} -evalue {params.evalue} \
-		-num_threads {params.threads} -outfmt {params.outfmt} -out {output.outfile}
+		{params.scriptpath} blastx -q {input.ref} -d {input.db_name} -e {params.evalue} \
+		-p {params.threads} -f {params.outfmt} -o {output.outfile} -M 755G
+		"""
+
+rule blast_to_bed:
+	input:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}.blastx", refgenome=config["refgenomes"])
+	output:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_EVEs.bed", refgenome=config["refgenomes"])
+	params:
+		script = config["scripts_path"] + "Blast_to_Bed3.py"
+	shell:
+		"""
+		python {params.script} {input}
+		"""
+rule bedtools_sort:
+	input:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_EVEs.bed", refgenome=config["refgenomes"])
+	output:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_sorted.bed", refgenome=config["refgenomes"])
+	shell:
+		"""
+		bedtools sort -i {input} > {output}
+		"""
+	
+rule bedtools_merge:
+	input:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_sorted.bed", refgenome=config["refgenomes"])
+	output:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_merged.bed", refgenome=config["refgenomes"])
+	params:
+		c = "4,5,6,7,8,9,10,11",
+		o = "collapse,collapse,distinct,collapse,collapse,collapse,collapse,collapse"
+	shell:
+		"""
+		bedtools merge -i {input} -c {params.c} -o {params.o} > {output}
+		"""
+
+rule top_score_bed2:
+	input:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_merged.bed", refgenome=config["refgenomes"])
+	output:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_top.bed", refgenome=config["refgenomes"])
+	params:
+		config["scripts_path"] + "Top_score_BED2.py"
+	shell:
+		"""
+		python {params} {input} {output}
+		"""
+
+rule bedtools_getfasta:
+	input:
+		bedfile = expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_top.bed", refgenome=config["refgenomes"]),
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"]),
+	output:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_top.fasta", refgenome=config["refgenomes"])
+	shell:
+		"""
+		bedtools getfasta -s -name -fi {input.ref} -bed {input.bedfile} -fo {output}
+		"""
+		
+rule diamond_nr:
+	input:
+		query = expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_top.fasta", refgenome=config["refgenomes"])
+	output:
+		outfile = expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_EVEsTop_nr.blastx", refgenome=config["refgenomes"])
+	params:
+		outfmt = "6 qseqid qstart qend salltitles evalue qframe pident qcovhsp sstart send slen",
+		evalue = "1e-06",
+		threads = "8",
+		scriptpath = config["scripts_path"] + "./diamond",
+		db_name = config["mainpath"] + "databases/nr_link/nr"
+	shell:
+		"""
+		{params.scriptpath} blastx -q {input.query} -d {params.db_name} -e {params.evalue} \
+		-p {params.threads} -f {params.outfmt} -o {output.outfile}
+		"""
+
+rule acc_to_taxid:
+	input:
+		blastx = expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_EVEsTop_nr.blastx", refgenome=config["refgenomes"]),
+		ncbifile = config["mainpath"] + "dmp/prot.accession2taxid.FULL"
+	output:
+		expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_EVEsTop_nr_taxids", refgenome=config["refgenomes"])
+	params:
+		config["scripts_path"] + "acc_to_taxid.py"
+	shell:
+		"""
+		python3 {params} {input.blastx} {input.ncbifile} {output}
+		"""
+		
+rule refine_candidates:
+	input:
+		blastx = expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_EVEsTop_nr_taxids", refgenome=config["refgenomes"]),
+		bedfile = expand(config["mainpath"] + "results/blast/{refgenome}/{refgenome}_top.bed", refgenome=config["refgenomes"])
+	output:
+		expand(config["mainpath"] + "results/blast/{refgenome}/output", refgenome=config["refgenomes"])
+	params:
+		pipe_dir = config["scripts_path"] + "Refine_EVEs_annotation",
+		tool = "diamond",
+		vhc = config["scripts_path"] + "Refine_EVEs_annotation/VHost-Classifier",
+		taxonkit = "taxonkit",
+		script = config["scripts_path"] + "Refine_EVEs_annotation/Refine_EVE_Annotation.sh"
+	shell:
+		"""
+		bash {params.script} -pipeline_directory {params.pipe_dir} -reverse_blast_tool {params.tool} \
+		-VHC_directory {params.vhc} -file_blastx {input.blastx} -file_bed_tophit {input.bedfile} \
+		-output_directory {output} -taxonkit_exe {params.taxonkit}
+		
+		"""
+		
+
+#################################################################################
+#identification pipeline
+#################################################################################	
+
+rule trim_adapt:
+	input:
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R3.fastq.gz"
+	output:
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1_trimmed.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R2_trimmed.fastq.gz"
+	shell:
+		"""
+		SeqPurge -in1 {input.R1} -in2 {input.R2} -out1 {output.R1} -out2 {output.R2} -threads 50
+		"""
+
+rule bwa_aln:
+	input:
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1_trimmed.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R2_trimmed.fastq.gz",
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"])
+	output:
+		R1 = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R1.sai",
+		R2 = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R2.sai"
+	params:
+		n = "2",
+		q = "15",
+		l = "5000",
+		t = "8"
+	shell:
+		"""
+		bwa aln {input.ref} -n {params.n} -q {params.q} -l {params.l} -t {params.t} {input.R1} > {output.R1}
+		
+		bwa aln {input.ref} -n {params.n} -q {params.q} -l {params.l} -t {params.t} {input.R2} > {output.R2}
+		"""
+
+rule bwa_sampe:
+	input:
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"]),
+		R1s = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R1.sai",
+		R2s = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R2.sai",
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1_trimmed.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R2_trimmed.fastq.gz"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam"
+	params:
+		a = "500"
+	shell:
+		"""
+		bwa sampe {input.ref} {input.R1s} {input.R2s} {input.R1} {input.R2} -a {params.a} > {output}
+		
+		rm {input.R1s}
+		rm {input.R2s}
+		rm {input.R1}
+		rm {input.R2}
+		"""
+
+rule samtools_faidx:
+	input:
+		expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"])
+	output:
+		expand(config["reference_path"] + "{refgenome}/{refgenome}.fna.fai", refgenome=config["refgenomes"]),
+	params:
+		t = "8"
+	shell:
+		"""
+		samtools faidx -@ {params} {input}
+		"""
+
+rule samtools_view_1:
+	input:
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna.fai", refgenome=config["refgenomes"]),
+		sam = config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped.bam"
+	shell:
+		"""
+		samtools view -@ 8 -bS -u -h -t {input.ref} {input.sam} > {output}
+		"""
+
+rule samtools_sort:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped.bam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped_sorted.bam"
+	shell:
+		"""
+		samtools sort {input} > {output}
+		
+		rm {input}
+		"""
+
+rule samtools_view_2:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped_sorted.bam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam"
+	shell:
+		"""
+		samtools view -f 4 -F 264 -@ 8 {input} > {output}
+		
+		rm {input}
+		"""	
+
+rule sam2fas:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.fasta"
+	params:
+		config["scripts_path"] + "vyper.v0.3/Vy-PER_sam2fas_se"
+	shell:
+		"""
+		python {params} {input} {output}
+		
+		rm {input}
+		"""
+
+rule phobos:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.fasta"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_phobos.fp3"
+	params:
+		config["scripts_path"] + "phobos-v3.3.12-linux/bin/phobos-linux-gcc4.1.2"
+	shell:
+		"""
+		{params} --outputFormat 3 {input} {output} 
+		
+		rm {input}
+		"""
+
+rule sam2fas2:
+	input:
+		fp3 = config["mainpath"] + "results/mapping/{fastq}/{fastq}_phobos.fp3",
+		sam = config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta"
+	params:
+		config["scripts_path"] + "vyper.v0.3/Vy-PER_sam2fas_se"
+	shell:
+		"""
+		python {params} -fp3 {input.fp3} 30 {input.sam} {output}
+		
+		rm {input.fp3}
+		rm {input.sam}
+		"""
+
+rule mmseqs_createdb:
+	input:
+		db = config["database"]
+	output:
+		db = config["mainpath"] + "results/mmseqs/inputs/db/U_DB"
+	shell:
+		"""
+		mmseqs createdb {input.db} {output.db}
+		"""
+rule mmseqs_createdb_query:
+	input:
+		query = config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta"
+	output:
+		query = config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query"
+	resources:
+		mem_mb = 200000
+	shell:
+		"""
+		mmseqs createdb {input.query} {output.query}
+		"""
+
+
+rule mmseqs_search:
+	input:
+		db = config["mainpath"] + "results/mmseqs/inputs/db/U_DB",
+		query = config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query"
+	output:
+		config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.0"
+	params:
+		tmp = "/dev/shm/passa006",
+		st = "3",
+		am = "4",
+		sml = "1T",
+		s = "4.0",
+		suffix = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result"
+	resources:
+		mem_mb = 200000
+	shell:
+		"""
+		nice -16 mmseqs search {input.query} {input.db} {params.suffix} {params.tmp} --search-type {params.st}\
+		--alignment-mode {params.am} -a --split-memory-limit {params.sml} -s {params.s} --remove-tmp-files --threads 30
+		"""
+		
+rule mmseqs_convertalis:
+	input:
+		query = config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query",
+		db = config["mainpath"] + "results/mmseqs/inputs/db/U_DB",
+		call = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.0"
+	output:
+		config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.m8"
+	params:
+		r = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result"
+	resources:
+		mem_mb = 200000
+	shell:
+		"""
+		mmseqs convertalis {input.query} {input.db} {params.r} {output} --threads 10
+		
+		rm {input.query}
+		"""
+		
+rule blatsam:
+	input:
+		db = config["database"],
+		result = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.m8",
+		passed = config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta",
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"]),
+		sam = config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam"
+	output:
+		out = config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt",
+		fastafolder = config["mainpath"] + "results/vyper/{fastq}/fastafolder"
+	params:
+		id = "{fastq}",
+		script = config["scripts_path"] + "vyper.v0.3/Vy-PER_blatsam"
+	shell:
+		"""
+		python {params.script} {params.id} {input.db} {input.result} {input.passed} {input.ref} \
+		{input.sam} {output.out} {output.fastafolder}
+		"""
+
+rule final_filtering:
+	input:
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna.fai", refgenome=config["refgenomes"]),
+		out = config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt",
+		ref2bit = expand(config["reference_path"] + "{refgenome}/{refgenome}.2bit", refgenome=config["refgenomes"])
+	output:
+		 config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out.top10.txt"
+	params:
+		script = config["scripts_path"] + "vyper.v0.3/Vy-PER_final_filtering",
+		id = "{fastq}",
+		suffix = config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out"
+	shell:
+		"""
+		python {params.script} -p 1000 10 10 0.01 0.5 0.95 3 0.90 0 swout.txt 0 \
+		{input.out} {input.ref2bit} {input.ref} {params.suffix} {params.id}
+		"""
+
+rule split_vyper:
+	input:
+		config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt"
+	output:
+		config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_vir.txt"
+	params:
+		config["scripts_path"] + "vyper_outsplit.py"
+	shell:
+		"""
+		python3 {params} {input} {output}
+		"""
+rule makeblastdb_vir:
+	input:
+		expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"])
+	output:
+		expand(config["reference_path"] + "{refgenome}/{refgenome}.fna.nhr", refgenome=config["refgenomes"])
+	shell:
+		"""
+		makeblastdb -in {input} -dbtype nucl
+		"""
+
+rule vir_refine:
+	input:
+		vyper = config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_vir.txt",
+		sam = config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam",
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"])
+	output:
+		file = config["mainpath"] + "results/vir/{fastq}/OutputFiles/Final_ChimericPairs_Info.txt"
+	params:
+		folder = config["scripts_path"] + "ViR/",
+		script = config["scripts_path"] + "ViR/ViR_RefineCandidates.sh",
+		name = expand("{fastq}", fastq=config["fastq_names"]),
+		max_perc = "0.8",
+		min_len = "30",
+		eval = "1e-15",
+		min_dist = "10000",
+		out = config["mainpath"] + "results/vir"
+	shell:
+		"""
+		bash {params.script} -work_files_dir {params.folder} -sample_name {params.name} -sam_file {input.sam} \
+		-chimeric_reads_file {input.vyper} -out {params.out} -reference_fasta {input.ref} -path_to_blastn blastn \
+		-path_to_bedtools bedtools -max_percentage_dinucleotide_in_ViralSeq {params.max_perc} \
+		-minimum_virus_len 30 -blastn_evalue {params.eval} -min_mate_distance {params.min_dist}
+		"""
+
+rule write_sample_list:
+	input:
+		expand(config["fastq_files_path"])
+	output:
+		config["mainpath"] + "results/vir/sample_list"
+	params:
+		config["scripts_path"] + "write_samplelist.py"
+	shell:
+		"""
+		python3 {params} {input} {output}
+		"""
+rule vir_solve_dispersion:
+	input:
+		ref = expand(config["reference_path"] + "{refgenome}/{refgenome}.fna", refgenome=config["refgenomes"]),
+		list = config["mainpath"] + "results/vir/sample_list",
+		file = config["mainpath"] + "results/vir/{fastq}/OutputFiles/Final_ChimericPairs_Info.txt"
+	output:
+		config["mainpath"] + "results/vir/{fastq}/OutputFiles/Complete_Dataset_Info.txt"
+	params:
+		merge_dist = "1000",
+		name = expand("{fastq}", fastq=config["fastq_names"]),
+		min_reads = "2",
+		perc_shared = "0.8",
+		script = config["scripts_path"] + "ViR/ViR_SolveDispersion.sh",
+		folder = config["scripts_path"] + "ViR",
+		out = expand(config["mainpath"] + "results/vir", fastq=config["fastq_names"]),
+	shell:
+		"""
+		bash {params.script} -work_files_dir {params.folder} -outdict_RefCand {params.out} -analysis_name {params.name} \
+		-sample_list {input.list} -out {params.out} -reference_fasta {input.ref} \
+		-path_to_blastn blastn \
+		-path_to_bedtools bedtools -trinity_exe Trinity -samtools_exe samtools -bwa_exe bwa \
+		-merge_dist {params.merge_dist} -minReads_inRegion {params.min_reads} -percReadsShared_inGroup_union {params.perc_shared}
 		"""

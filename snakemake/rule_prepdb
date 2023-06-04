@@ -1,0 +1,12 @@
+rule diamond_prepdb:
+	input:
+		config["mainpath"] + "databases/nr_link/"
+	output:
+		config["mainpath"] + "databases/nr_link/nr.01.acc"
+	params:
+		config["scripts_path"] + "./diamond"
+	shell:
+		"""
+		{params} prepdb -d {input}nr
+		"""
+

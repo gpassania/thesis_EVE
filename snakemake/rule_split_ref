@@ -1,0 +1,13 @@
+
+rule split_reference_genome:
+	input:
+		 ref = argv[4]
+	output:
+		"../data/split_ref/chr1.fasta"
+	priority: 10
+	shell:
+		"""
+		python3 ../snakemake/scripts/split_ref.py {input}
+		mv chr* ../data/split_ref/
+		mv SPEXI* ../data/split_ref/
+		"""

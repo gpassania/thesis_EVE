@@ -1,0 +1,381 @@
+configfile: "config.yaml"
+
+refgenome = config["representative_ref"]
+print("processing representative genome:", refgenome)
+
+rule all:
+	input:
+		expand(config["fastq_files_path"] + "{fastq}/{fastq}_{R}_trimmed.fastq.gz", fastq=config["fastq_names"], R=["R1","R2"]),
+		refgenome+".bwt",
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_{R}.sai", fastq=config["fastq_names"], R=["R1","R2"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped.bam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped_sorted.bam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.fasta", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_phobos.fp3", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.0", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.m8", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt",fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_filtered.txt", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out.top10.txt", fastq=config["fastq_names"]),
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_filtered.txt", fastq=config["fastq_names"]),
+		config["mainpath"] + "results/vyper/top10summary.txt",
+		config["mainpath"] + "results/vyper/combined_clusters.txt",
+		config["mainpath"] + "results/vyper/overlapping_summary.txt",
+		config["mainpath"] + "results/vyper/overlapping_summary.png"
+
+		
+rule trim_adapt:
+	input:
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R3.fastq.gz"
+	output:
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1_trimmed.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R2_trimmed.fastq.gz"
+	conda:
+		"envs/trimming.yaml"
+	resources:
+		mem_mb=100000
+	shell:
+		"""
+		SeqPurge -in1 {input.R1} -in2 {input.R2} -out1 {output.R1} -out2 {output.R2} -threads 10
+		"""
+rule bwa_index:
+	input:
+		refgenome
+	output:
+		refgenome+".bwt"
+	shell:
+		"""
+		bwa index {input}
+		"""
+
+rule bwa_aln:
+	input:
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1_trimmed.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R2_trimmed.fastq.gz",
+		ref = refgenome,
+		call = refgenome+".bwt"
+	output:
+		R1 = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R1.sai",
+		R2 = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R2.sai"
+	params:
+		n = "2",
+		q = "15",
+		l = "5000",
+		t = "15"
+	resources:
+		mem_mb=200000
+	shell:
+		"""
+		bwa aln {input.ref} -n {params.n} -q {params.q} -l {params.l} -t {params.t} {input.R1} > {output.R1}
+		
+		bwa aln {input.ref} -n {params.n} -q {params.q} -l {params.l} -t {params.t} {input.R2} > {output.R2}
+		"""
+
+rule bwa_sampe:
+	input:
+		ref = refgenome,
+		R1s = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R1.sai",
+		R2s = config["mainpath"] + "results/mapping/{fastq}/{fastq}_R2.sai",
+		R1 = config["fastq_files_path"] + "{fastq}/{fastq}_R1_trimmed.fastq.gz",
+		R2 = config["fastq_files_path"] + "{fastq}/{fastq}_R2_trimmed.fastq.gz"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam"
+	params:
+		a = "500"
+	shell:
+		"""
+		bwa sampe {input.ref} {input.R1s} {input.R2s} {input.R1} {input.R2} -a {params.a} > {output}
+		"""
+
+rule samtools_faidx:
+	input:
+		refgenome
+	output:
+		refgenome+".fai"
+	shell:
+		"""
+		samtools faidx {input}
+		"""
+
+rule samtools_view_1:
+	input:
+		ref = refgenome + ".fai",
+		sam = config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped.bam"
+	shell:
+		"""
+		samtools view -@ 8 -u -h -b -T {input.ref} {input.sam} > {output}
+		"""
+
+rule samtools_sort:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped.bam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped_sorted.bam"
+	shell:
+		"""
+		samtools sort {input} > {output}
+		"""
+
+rule samtools_view_2:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_mapped_sorted.bam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam"
+	shell:
+		"""
+		samtools view -f 4 -F 264 -@ 8 {input} > {output}
+		"""	
+
+rule sam2fas:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.fasta"
+	params:
+		config["scripts_path"] + "vyper.v0.3/Vy-PER_sam2fas_se"
+	shell:
+		"""
+		python {params} {input} {output}
+		
+		"""
+
+rule phobos:
+	input:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.fasta"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_phobos.fp3"
+	params:
+		config["scripts_path"] + "phobos-v3.3.12-linux/bin/phobos-linux-gcc4.1.2"
+	shell:
+		"""
+		{params} --outputFormat 3 {input} {output} 
+		"""
+
+rule sam2fas2:
+	input:
+		fp3 = config["mainpath"] + "results/mapping/{fastq}/{fastq}_phobos.fp3",
+		sam = config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped.sam"
+	output:
+		config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta"
+	params:
+		config["scripts_path"] + "vyper.v0.3/Vy-PER_sam2fas_se"
+	shell:
+		"""
+		python {params} -fp3 {input.fp3} 30 {input.sam} {output}
+		"""
+
+rule mmseqs_createdb:
+	input:
+		db = config["database"]
+	output:
+		db = config["mainpath"] + "results/mmseqs/inputs/db/U_DB"
+	conda:
+		"envs/mmseqs.yaml"
+	shell:
+		"""
+		mmseqs createdb {input.db} {output.db}
+		"""
+rule mmseqs_createdb_query:
+	input:
+		query = config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta"
+	output:
+		query = config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query"
+	resources:
+		mem_mb = 100000
+	conda:
+		"envs/mmseqs.yaml"
+	shell:
+		"""
+		mmseqs createdb {input.query} {output.query}
+		"""
+
+
+rule mmseqs_search:
+	input:
+		db = config["mainpath"] + "results/mmseqs/inputs/db/U_DB",
+		query = config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query"
+	output:
+		config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.0"
+	params:
+		tmp = config["mainpath"] + "results/mmseqs/",
+		st = "3",
+		am = "4",
+		sml = "1T",
+		s = "4.0",
+		suffix = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result"
+	resources:
+		mem_mb = 400000
+	conda:
+		"envs/mmseqs.yaml"
+	shell:
+		"""
+		nice -16 mmseqs search {input.query} {input.db} {params.suffix} {params.tmp} --search-type {params.st}\
+		--alignment-mode {params.am} -a --split-memory-limit {params.sml} -s {params.s} --remove-tmp-files --threads 30
+		"""
+		
+rule mmseqs_convertalis:
+	input:
+		query = config["mainpath"] + "results/mmseqs/inputs/reads/{fastq}/{fastq}_query",
+		db = config["mainpath"] + "results/mmseqs/inputs/db/U_DB",
+		call = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.0"
+	output:
+		config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.m8"
+	params:
+		r = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result"
+	conda:
+		"envs/mmseqs.yaml"
+	shell:
+		"""
+		mmseqs convertalis {input.query} {input.db} {params.r} {output} --threads 10
+		"""
+		
+rule blatsam:
+	input:
+		db = config["database"],
+		result = config["mainpath"] + "results/mmseqs/outputs/{fastq}/{fastq}_result.m8",
+		passed = config["mainpath"] + "results/mapping/{fastq}/{fastq}_unmapped_passed.fasta",
+		ref = refgenome,
+		sam = config["mainpath"] + "results/mapping/{fastq}/{fastq}_allreads.sam"
+	output:
+		out = config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt",
+	params:
+		id = "{fastq}",
+		script = config["scripts_path"] + "vyper.v0.3/Vy-PER_blatsam"
+	resources:
+		mem_mb = 400000
+	shell:
+		"""
+		python {params.script} {params.id} {input.db} {input.result} {input.passed} {input.ref} \
+		{input.sam} {output.out}
+
+		"""
+
+rule fatotwobit:
+	input:
+		refgenome
+	output:
+		refgenome+".2bit"
+	conda:
+		"envs/mmseqs.yaml"
+	shell:
+		"""
+		faToTwoBit {input} {output}
+		"""
+		
+rule vyper_prefilter:
+	input:
+		config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt"
+	output:
+		config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_filtered.txt"
+	params:
+		config["scripts_path"] + "vyper_pre_filter.py"
+	shell:
+		"""
+		python3 {params} {input} {output}
+		"""
+
+rule final_filtering:
+	input:
+		ref = refgenome + ".fai",
+		out = config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_filtered.txt",
+		ref2bit = expand(config["reference_path"] + "{refgenome}.2bit", refgenome= refgenome)
+	output:
+		 config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out.top10.txt",
+		 config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out.hit_clusters.txt"
+	params:
+		script = config["scripts_path"] + "vyper.v0.3/Vy-PER_final_filtering",
+		id = "{fastq}",
+		suffix = config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out"
+	conda:
+		"envs/vyper.yaml"
+	resources:
+		mem_mb = 800000
+	shell:
+		"""
+		python {params.script} -p 1000 1 1 0.01 0.5 0.95 3 0.90 0 swout.txt 0 \
+		{input.out} {input.ref2bit} {input.ref} {params.suffix} {params.id}
+		"""
+
+rule split_vyper:
+	input:
+		config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable.txt"
+	output:
+		config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_outtable_vir.txt"
+	params:
+		config["scripts_path"] + "vyper_outsplit.py"
+	shell:
+		"""
+		python3 {params} {input} {output}
+		"""
+
+rule summarize_top_10:
+	input:
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out.top10.txt", fastq=config["fastq_names"])
+	output:
+		config["mainpath"] + "results/vyper/top10summary.txt"
+	params:
+		config["scripts_path"] + "summarize_top10.py"
+	shell:
+		"""
+		python3 {params} {input}
+		"""
+rule compare_regions:
+	input:
+		expand(config["mainpath"] + "results/vyper/{fastq}/{fastq}_vyper_out.hit_clusters.txt", fastq=config["fastq_names"])
+	output:
+		config["mainpath"] + "results/vyper/combined_clusters.txt",
+		config["mainpath"] + "results/vyper/unique_regions.txt",
+		config["mainpath"] + "results/vyper/overlapping_regions.txt"
+	params:
+		config["scripts_path"] + "compare_regions.py"
+	shell:
+		"""
+		python3 {params} {input}
+		"""		
+rule sum_overlap:
+	input:
+		config["mainpath"] + "results/vyper/overlapping_regions.txt"
+	output:
+		config["mainpath"] + "results/vyper/overlapping_summary.txt"
+	params:
+		config["scripts_path"] + "sum_overlaps.py"
+	shell:
+		"""
+		python3 {params} {input}
+		"""
+rule R_plot:
+	input:
+		over = config["mainpath"] + "results/vyper/overlapping_summary.txt",
+		unique = config["mainpath"] + "results/vyper/unique_regions.txt"
+	output:
+		config["mainpath"] + "results/vyper/overlapping_summary.png"
+	params:
+		config["scripts_path"] + "R_plots_ident.R"
+	shell:
+		"""
+		Rscript {params} {input.over} {input.unique}
+		"""
+
+rule remove_tmp_files:
+	input:
+		config["mainpath"] + "results/vyper/overlapping_summary.txt"
+	log:
+		"temp.log"
+	params:
+		outputs = config["mainpath"] + "results/mmseqs/outputs/",
+		mmseq_temp = config["mainpath"] + "results/mmseqs/"
+	shell:
+		"""
+		rm tmp__vyper*
+		cd mmseq_temp
+		rm -r [0-9]*
+		cd -
+		"""
+

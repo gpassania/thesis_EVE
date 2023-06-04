@@ -1,0 +1,1462 @@
+#!/bin/env python
+##!/usr/bin/python
+
+import sys
+import os.path
+import time
+import resource
+import operator
+from subprocess import call
+import pickle
+
+###########################################################################################################
+#
+#  Vy-PER - Virus integration detection bY Paired End Reads 
+#
+#  Vy-PER helps to identify reads from paired-end sequencing, where one end aligns to host DNA 
+#  (e.g. a human genome), and the other end aligns to e.g. a virus genome (or any other non-host genome).
+#
+#  Vy-PER_final_filtering 
+#  - reads multiple (per-lane) Vy-Per files, 
+#  - counts phiX174 hits per chromosome for optical noise QC
+#  - blats the virus hit candidates to the host genome (e.g. hg19), 
+#  - removes any host genome hits, 
+#  - removes any homopolymer or STR hits,
+#  - sorts by host genome coordinates
+#  - clusters the virus hits and removes hits not in clusters,
+#  - identifies the top 3 viruses per cluster
+#  - identifies the top 10 viruses in sample (incl. phiX174)
+#  - outputs summary txt, bed, and vcf files of virus clusters
+#  - summary graphics by Silke Szymczak in R
+#
+#  v0.3.4 : add unique_hits column in Top10 table
+#  v0.3.5 : new version of rscript_ideogram.R with additional command line argument
+#  v0.3.6 : corrected line 1128, and rscript_ideogram.R
+###########################################################################################################
+
+def setlimits():
+	#############################################################################
+	# sets resource limits (mandatory for job interoperability on cluster)
+	# to 10MB Stack + 1GB data + 1GB RLIMIT_RSS
+	# first steps taken from
+	# http://docs.python.org/library/resource.html and
+	# http://www.doughellmann.com/PyMOTW/resource/
+	# Author: MICHAEL FORSTER m.forster@ikmb.uni-kiel.de
+	# Version: 13 September 2010
+	#############################################################################
+
+	# usage = resource.getrusage(resource.RUSAGE_SELF)
+
+	#print ' usage ='
+	#print usage
+	
+	#for name, desc in [
+	#('RLIMIT_CORE', 'core file size'),
+	#('RLIMIT_CPU',  'CPU time'),
+	#('RLIMIT_FSIZE', 'file size'),
+	#('RLIMIT_DATA', 'heap size'),
+	#('RLIMIT_STACK', 'stack size'),
+	#('RLIMIT_RSS', 'resident set size'),
+	#('RLIMIT_NPROC', 'number of processes'),
+	#('RLIMIT_NOFILE', 'number of open files'),
+	#('RLIMIT_MEMLOCK', 'lockable memory address'),
+	#]:
+	#	limit_num = getattr(resource, name)
+	#	soft, hard = resource.getrlimit(limit_num)
+	#	print 'Maximum %-25s (%-15s) : %20s %20s' % (desc, name, soft, hard)
+
+	#############################################################################
+	# Adjust the maximum size (in bytes) of the process's heap
+	#############################################################################
+
+	soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+	#print 'Data/heap limit starts as  :', soft
+
+	# 1GB heap:
+	newheap=1024*1024*1024*1024
+
+	resource.setrlimit(resource.RLIMIT_DATA, (newheap, hard))
+
+	soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+	#print 'Data/heap limit changed to :', soft
+
+	#############################################################################
+	# ca 10MB original stack changed to exactly 10MB stack:
+	#############################################################################
+
+	#newstack=10*1024*1024+1
+	newstack=1000*1024*1024
+	soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+	#print 'Stack limit starts as  :', soft
+	resource.setrlimit(resource.RLIMIT_STACK, (newstack, hard))
+	soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+	#print 'Stack limit changed to :', soft
+
+	#############################################################################
+	# 1GB RLIMIT_RSS
+	# "Maximale resident set size in Byte. Bei Speicherengpaessen entzieht der Kern
+	# den Prozessen, die den resident set size ueberschreiten, den zuviel
+	# angeforderten Speicher."
+	# http://pronix.linuxdelta.de/C/Linuxprogrammierung/Linuxsystemprogrammieren_C_Kurs_Kapitel3a.shtml
+	#############################################################################
+
+	newrss=1000*1024*1024*1024*1024
+	soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
+	#print 'RLIMIT_RSS starts as  :', soft
+	resource.setrlimit(resource.RLIMIT_RSS, (newrss, hard))
+	soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
+	#print 'RLIMIT_RSS changed to :', soft
+	
+def vyper__ff_read (infiles, mq):
+	#######################################################################################
+	# 1) Read all data from infiles into list "header" and dictionary "hits"
+	#######################################################################################
+	headers = []
+	hits = {}
+	
+	n = len(infiles)
+	firstfile = -1
+	k = 0
+	for infile in infiles:
+		firstfile += 1
+		header = True
+		inf = open (infile, 'r')
+		for line in inf:
+			if line.startswith('#'):
+				# read header lines
+				if header and firstfile == 0:
+					headers.append(line)
+				if line.startswith('#RunID\tChr\tStart\tEnd\tRead_name\tRead') or \
+				line.startswith('#RunID\tChr\tStart\tEnd\tPos[1]\tMapQV\tRead_name\tRead'):
+					# print ' found header line'
+					if firstfile > 0:
+						#print 'already got header line'
+						if line != header1:
+							sys.exit ('*** Error: table header in %s does not match %s' % (infile, infiles[0]))
+					else:
+						#print 'getting header line'
+						header1 = line
+						# get the columns of interest: 
+						cols = line.split('\t')
+						ncols = len(cols)
+						ichr = cols.index('Chr')
+						istart = cols.index ('Start')
+						iend = cols.index ('End')
+						iname = cols.index ('Read_name')
+						iread = cols.index ('Read')
+						irefseqcontext = cols.index ('RefSeqContext')
+						ihits = cols.index ('Hits')
+						if line.find('\tPos[1]\tMapQV\t') > 0:
+							ipos1 = cols.index ('Pos[1]')
+							imapqv = cols.index ('MapQV')
+						else:
+							ipos1 = -1
+							imapqv = -1 
+
+						# Note: The table header in older versions is incorrect (contains '%.1', '%.2', '%.3' which is not used)
+						# so here we must correct this mistake
+					
+						#RunID	Chr	Start	End	Read_name	Read	RefSeqContext	Hits	Contig.1	Start.1	End.1	Read.1	VirSeqContext.1	%.1	Len.1	E.1	Contig.2	Start.2	End.2	Read.2	VirSeqContext.2	%.2	Len.2	E.2	Contig.3	Start.3	End.3	Read.3	VirSeqContext.3	%.3	Len.3	E.3
+						
+						ivir1 = cols.index ('Contig.1')
+						iread1 = cols.index ('Read.1')
+						ilen1 = iread1 + 2
+						ie1 = ilen1 + 1
+						
+						ivir2 = ie1 + 1
+						iread2 = ivir2 + 3
+						ilen2 = iread2 + 2
+						ie2 = ilen2 + 1
+						
+						ivir3 = ie2 + 1
+						iread3 = ivir3 + 3
+						ilen3 = iread3 + 2
+						ie3 = ilen3 + 1
+						
+					# no more header lines in this current infile:
+					header = False
+			else:
+				if len(line) == 0:
+					# end of file
+					break
+				# read hits
+				cols = line.split('\t')
+				# hack for processing early version samples with bad header line:
+				if len(cols) == ncols-3:
+					ncols = ncols - 3
+				try:
+					cols[ncols-1] = cols[ncols-1].strip()
+				except:
+					print('line=%s.' % (line))
+					print('number of columns=%s, ncols=%s.' % (len(cols), ncols))
+					sys.exit ('*** Error in %s' % (infile) )
+				# if mapping-quality is available (i.e. data from v0.3.1 and higher), 
+				# only considers reads fulfilling min threshold:
+				if imapqv != -1:
+					mapqv = int(cols[imapqv])
+					if mapqv >= mq:
+						# use k as the unique key, also as the read name when BLAT-ting later:
+						hits[k] = (cols[:])
+						k += 1
+				else:
+					# use k as the unique key, also as the read name when BLAT-ting later:
+					hits[k] = (cols[:])
+					k += 1 
+		inf.close()
+	# remove last line of headers (i.e. the table header which may be incorrect in older versions):
+	n = len(headers) - 1
+	del headers[n]
+	return headers, hits, ichr, istart, iend, ipos1, imapqv, iname, irefseqcontext, ihits, ivir1, iread1, ilen1, ie1, ivir2, iread2, ilen2, ie2, ivir3, iread3, ilen3, ie3
+
+def vyper__ff_phix_count (hits, fai, frac1, ichr, ihits, ivir1):
+	#######################################################################################
+	#  2) count phiX174 hits per chromosome for optical noise QC
+	#######################################################################################	
+	phixhits = {}
+	chromlen = {}
+	chroms = []
+	
+	# open fai file and get chromosome names:
+	inf = open(fai,'r')
+	print(fai)
+	for line in inf:
+		cols = line.strip().split()
+		chrom = cols[0]
+		l = int( cols[1] )
+		chromlen[chrom] = l
+		if not (chrom.find('random') > -1 or chrom.find('Un') > -1):
+			# absolute number of hits, and fraction of hits in all host genome:
+			phixhits[chrom] = (0, 0., 0., l)
+			# chrom name:
+			chroms.append(chrom)
+	inf.close()
+	
+	# count phiX174 hits in this chromosome, and remove entries 2 and 3 if present in phiX174-hits:
+	for k in hits:
+		cols = hits[k]
+		if cols[ivir1].find('phiX174') > -1:
+			chrom = cols[ichr]
+			try:
+				# increment hits:
+				n, a, b, l = phixhits[chrom]
+				n += 1
+				phixhits[chrom] = n, a, b, l
+				# remove entries 2 and 3 by setting the number of hits to 1:
+				n = int( cols[ihits] )
+				if n > 1:
+					cols[ihits] = 1
+				hits[k] = (cols[:])
+			except:
+				# this is a randomly placed contig or an unmapped contig, so just ignore it.
+				continue
+
+	# sum up all phiX174 hits, and compute the fraction of all phiX-hits per chromosome:
+	nsum = 0
+	lsum = 0
+	for chrom in phixhits:
+		n, a, b, l = phixhits[chrom]
+		nsum += n
+		lsum += l
+	for chrom in phixhits:
+		n, a, b, l = phixhits[chrom]
+		# phiX hits in chromosome / phiX hits in genome
+		try:
+			a = float (n) / float (nsum)
+		except:
+			a = 0.0
+		# chromosome length / genome length
+		b = float (l) / float (lsum)
+			
+		phixhits[chrom] = (n, a, b, l)
+	return phixhits, chroms, chromlen
+
+def vyper__ff_fa (fa, hits, ihits, iread1, iread2, iread3):
+	#######################################################################################
+	# write fasta file of virus hits
+	#######################################################################################
+	out = open (fa, 'w')
+	for k in hits:
+		cols = hits[k]
+		out.write ('>%s_%s\n' % (k,1))
+		out.write ('%s\n' % cols[iread1])
+		n = int( cols[ihits] )
+		if n > 1:
+			out.write ('>%s_%s\n' % (k,2))
+			out.write ('%s\n' % cols[iread2])
+			if n > 2:
+				out.write ('>%s_%s\n' % (k,3))
+				out.write ('%s\n' % cols[iread3])
+	out.close()
+
+def vyper__ff_remove_homopolymer_n_str (hits, frac2, ihits, iread1, iread2, iread3):
+	#######################################################################################
+	#  3) remove homopolymer-rich or STR-rich virus hits (via Phobos)
+	#######################################################################################
+	
+	# temp file names
+	filetime = time.strftime("%Y_%m_%d__%H_%M_%S")
+	fa='tmp__vyper_ff_remove_homopolymer_n_str_%s.fa' % (filetime)	
+	pho='tmp__vyper_ff_remove_homopolymer_n_str_%s.pho' % (filetime)
+	
+	##### write fasta file for phobos:
+	vyper__ff_fa (fa, hits, ihits, iread1, iread2, iread3)
+	
+	##### start phobos and then sleep for 3 seconds:
+	
+	#HARDCODED#
+	cmdstring = "/lustre/BIF/nobackup/passa006/thesis_EVE/snakemake/scripts/phobos-v3.3.12-linux/bin/phobos-linux-gcc4.1.2 --outputFormat 3 %s %s" % (fa, pho)
+	retcode = call(cmdstring, shell=True)
+	if retcode != 0:
+		print('*** Error: phobos did not run error-free, return-code: %s' % (retcode))
+		print('***        Tip: Is phobos installed?')
+		sys.exit()
+	time.sleep(3)
+	
+	##### read phobos file and remove STR-rich hits from dictionary "hits":
+	
+	ireads = []
+	ireads.append (iread1)
+	ireads.append (iread2)
+	ireads.append (iread3)
+	icontigs = []
+	for i in range(0,3):
+		icontigs.append( ireads[i]-3 )
+	
+	inf=open (pho, 'r')
+	# read header lines:
+	while True:
+		header=inf.readline()
+		if not header.startswith("#"):
+			# header comment lines are over
+			break
+			
+	# column "length" in table header
+	cols=header.split()
+	length=cols.index("length")
+
+	##### initialisation
+	
+	# current "index" read k (for which there are 1-3 virus hit reads):
+	kold = -1
+	# current lengths of STR region in each of these virus hit reads:
+	lstr = []
+	
+	##### loop over remaining lines from phobos file:
+	lastline = False
+	while True:
+		line=inf.readline()
+		if len(line) == 0 or line.startswith("## Finished") :
+			# EOF reached
+			if kold == -1:
+				break
+			else:
+				lastline = True
+				k = -1
+		else:	
+			line=line.strip()
+			cols=line.split()
+			# read name --> hits index and sub-read number:
+			k = int ( cols[0].split('_')[0] )
+			kk = int ( cols[0].split('_')[1] )
+		
+		# check whether there is a change in "k":
+		if kold != k:
+			if kold == -1:
+				# first record: just re-initialise:
+				kold = k
+				lstr = []
+			else:
+				# process read set "kold":
+				
+				# check lengths of reads kk:
+				try:
+					hitcols = hits[kold]
+				except:
+					pass
+				#print 'hitcols', hitcols
+				n = int ( hitcols[ihits] )
+				removehit = {}
+				for i in range(0,n):
+					ii = n-i-1
+					# length of hit sequence
+					l = len (hitcols[ ireads[ii] ])
+					# length of STR in this read:
+					##lstrii = int(cols[length])
+#HERE
+					if len(lstr) == 1:
+						lstrii = float(lstr[0])
+					elif len(lstr) == 2 and ii == 2:
+						lstrii = float(lstr[ii-1])
+					elif len(lstr) == 2 and ii == 1:
+						lstrii = float(lstr[ii-1])
+					elif len(lstr) == 2 and ii == 0:
+						lstrii = float(lstr[ii])
+					else:
+						try:
+							lstrii = float(lstr[ii])
+						except:
+							print('k, kold', k, kold)
+							print('lstr', lstr)
+							print(line)
+							print('n, i, ii', n, i, ii)
+							sys.exit()
+					if float(lstrii) > float (frac2) * float (l):
+						# tag this hit-read as to be deleted:
+						removehit[ii]=1
+				nn = len(removehit)
+				if nn == n:
+					# remove this set of hits:
+					del hits[kold]
+				elif nn > 0:
+					# adjust the number of hits:
+					hitcols[ihits] = n - nn
+					# shuffle the Contig.x, Start.x, End.x, Read.x, VirSeqContext.x, %.x, Len.x, E.x
+					shuffle = []
+					for i in range(0,n):
+						if i not in hitcols:
+							# remember to keep i'th virus hit
+							shuffle.append(i)
+					j = -1
+					for i in shuffle:
+						# write "to keep" virus hit into first free location of hitcols:
+						j += 1
+						indexnew = icontigs[j]
+						indexold = icontigs[i]
+						for ii in range(0,6):
+							hitcols [indexnew + ii] = hitcols [indexold + ii]
+					# save hitcols into hits:
+					hits[kold] = ( hitcols[:] )
+				if lastline:
+					break
+				else:
+					# re-initialise:
+					kold = k
+					lstr = []
+		# length of STR region in this read:
+		try:
+			lstr.append ( int(cols[length]) )
+		except:
+			print(line)
+			print(cols[length])
+			sys.exit('*** Error in phobos file %s' % (pho))
+	inf.close()
+	# delete the tmp files:
+	cmdstring = "rm -f %s %s" % (fa, pho)
+	retcode = call(cmdstring, shell=True)
+	return hits
+
+def vyper__ff_vir_of_k (virkfile, hits, ihits, ivir):
+	#######################################################################################
+	# write virus name vs. k file for manual checking of FPGA Smith-Waterman alignments
+	# write fasta file of virus hits
+	#######################################################################################
+	out = open (virkfile, 'w')
+	for k in hits:
+		cols = hits[k]
+		out.write ('>%s_%s\n' % (k,1))
+		out.write ('%s\n' % cols[ivir[0]])
+		n = int( cols[ihits] )
+		if n > 1:
+			out.write ('>%s_%s\n' % (k,2))
+			out.write ('%s\n' % cols[ivir[1]])
+			if n > 2:
+				out.write ('>%s_%s\n' % (k,3))
+				out.write ('%s\n' % cols[ivir[2]])
+	out.close()
+
+def vyper__ff_refseqfa (ref, hits, irefseqcontext):
+	#######################################################################################
+	# write RefSeqContext fasta file for BLAT/BLAST (because too insensitive if whole genome!!)
+	#######################################################################################
+	out = open (ref, 'w')
+	for k in hits:
+		cols = hits[k]
+		refseqcontext = cols[irefseqcontext]
+		out.write ('>%s_refseqcontext\n' % (k))
+		out.write ('%s\n' % refseqcontext)
+	out.close()
+
+def vyper__ff_remove_hostgenome_hits (sw, vhits, irefseqcontext, ihits, blatref, iread1, iread2, iread3, ivir, ratio):
+	#######################################################################################
+	#  4) a) blat the virus hits to the host genome, removing any host genome hits
+	#######################################################################################
+	
+	# temp file names
+	filetime = time.strftime("%Y_%m_%d__%H_%M_%S")
+
+	fa='tmp__vyper_ff_remove_hostgenome_hits_%s.fa' % (filetime)	
+	outfile='tmp__vyper_ff_remove_hostgenome_hits__%s.out' % (filetime)
+	# manual test with most sensitive BLAT settings:
+	##outfile='tmp__vyper_ff_remove_hostgenome_hits__%s.blat.out' % (filetime)
+	ref='tmp__vyper_ff_remove_hostgenome_hits__%s.ref.fa' % (filetime)
+	blatref='tmp__vyper_ff_remove_hostgenome_hits__%s.ref.2bit' % (filetime)
+	blastref='tmp__vyper_ff_remove_hostgenome_hits__%s.ref.blast.db' % (filetime)
+	blasttitle='tmp__vyper_ff_remove_hostgenome_hits__%s.ref.blast' % (filetime)
+	outfileblast='tmp__vyper_ff_remove_hostgenome_hits__%s.blast.out' % (filetime)
+	virkfile = 'tmp__vyper_ff_remove_hostgenome_hits__%s.virk.txt' % (filetime)
+	
+	##### write fasta file for BLAT/BLAST:
+	vyper__ff_fa (fa, vhits, ihits, iread1, iread2, iread3)
+	
+	##### write virus name vs. k file for manual checking of FPGA Smith-Waterman alignments
+	##vyper__ff_vir_of_k (virkfile, vhits, ihits, ivir)
+	
+	# if sw == 3, BLAT against the entire hg19, otherwise: create a small  
+	# reference sequence window around each virus/host chimera paired-end
+	if sw != 3:
+		##### write RefSeqContext fasta file for BLAT (or BLAST), because far too slow if whole genome:
+		vyper__ff_refseqfa (ref, vhits, irefseqcontext)
+		time.sleep(2)
+		#### create BLAT 2-bit reference:
+		cmdstring = "faToTwoBit %s %s" % (ref, blatref)
+		print(cmdstring)
+		retcode = call(cmdstring, shell=True)
+		if retcode != 0:
+			print('*** Error: faToTwoBit did not run error-free, return-code: %s' % (retcode))
+			print('***        Tip: Is faToTwoBit installed?')
+			sys.exit()
+		time.sleep(3)
+	
+	
+	##### start BLAT and then sleep for 3 seconds:
+	#cmdstring = "blat -out=blast8 -noTrimA -t=dna -q=dna -maxGap=0 -fastMap %s %s %s" % (blatref, fa, outfile)
+	# the fast BLAT mode is too insensitive even for this small reference, so I use the full options to increase sensitivity:
+#	cmdstring = "blat -out=blast8 -noTrimA -t=dna -q=dna -repMatch=1000000 -fine -tileSize=11 -stepSize=5 %s %s %s" % (blatref, fa, outfile)
+#	print(cmdstring)
+#	retcode = call(cmdstring, shell=True)
+#	if retcode != 0:
+#		print('*** Error: BLAT did not run error-free, return-code: %s' % (retcode))
+#		print('***        Tip: Is blat installed?')
+#		sys.exit()
+#	time.sleep(3)
+	
+	#######################################################################################
+	# alternative Experiment: create BLAST database (uncomment the following lines)
+	#######################################################################################
+
+	cmdstring = "makeblastdb -out %s -title %s -parse_seqids -dbtype nucl -in %s" % (blastref, blasttitle, ref)
+	print cmdstring
+	retcode = call(cmdstring, shell=True)
+	time.sleep(3)
+	
+	# alternatively: start BLAST and then sleep for 3 seconds:
+	outfile = outfile + '.blast'
+	#cmdstring = "blastn -outfmt 6 -culling_limit 10 -num_threads 40 -evalue 10 -ungapped -db %s -query %s -out %s" % (blastref, fa, outfile)
+	# ungapped BLAST was completele insensitive (zero hits); above BLAT is MUCH better
+	cmdstring = "blastn -outfmt 6 -culling_limit 10 -num_threads 10 -evalue 1e-06 -db %s -query %s -out %s" % (blastref, fa, outfile)
+	print cmdstring
+	retcode = call(cmdstring, shell=True)
+	time.sleep(3)
+
+	#######################################################################################
+	### RESULT OF EXPERIMENTS:
+	### BLAT is better than BLAST for this filtering (BLAST is not suitable!).
+	### But the ref MUST BE just the RefSeqContext, NOT the entire genome.
+	### Nevertheless, BLAT does NOT detect some obvious human alignments
+	### --> Therefore do a final filtering using Smith-Waterman against the entire hg19
+	#######################################################################################
+	
+	##### read BLAT file and remove host genome hits from dictionary "hits":
+	
+	ireads = []
+	ireads.append (iread1)
+	ireads.append (iread2)
+	ireads.append (iread3)
+	icontigs = []
+	for i in range(0,3):
+		icontigs.append( ireads[i]-3 )
+	
+	# current read name
+	crname = ''
+	# number of hits for the current read
+	n=0
+	
+	inf=open (outfile, 'r')
+	
+	for line in inf:
+		if line.startswith('#'):
+			continue
+		cols = line.split()
+		# read name
+		rname = cols[0].strip()
+		if crname == '':
+			# this is the very first read in the blat file
+			crname = rname
+		
+		# check whether this is a new read:
+		if rname != crname and n != 0:
+			# initialise variables for new read:
+			crname = rname
+			n = 0
+			
+		# Check whether this is the first hit of the current read, and preferable to the best virus hit:
+		if n == 0:
+			n = 1
+
+			# length of the softclipped read
+			l = int(cols[3])
+			# get index for vhits:
+			k = crname.split('_')[0]
+			#kk = crname.split('_')[1]
+			try:
+				vcols = vhits[int(k)]
+				# length of virus hit sequence
+				seq = vcols[iread1]
+				vl = len(seq)
+				vlrat = float(vl)*ratio
+				if float(l) >= vlrat:
+					del vhits[int(k)]
+			except:
+				continue
+	return vhits	
+
+def vyper__ff_cigar_longest_match (cigar):
+	#######################################################################################
+	# find longest 'Match' stretch in a CIGAR
+	#######################################################################################
+	
+	# initialise variables
+	numerals = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+	lmax = 0
+	l = 0
+	n = len(cigar)
+	j = -1
+	
+	# loop over all 'M's in cigar string:
+	while True:
+		i = cigar.find('M')
+		if i < 0:
+			# no M found
+			break
+		
+		k = i
+		# Loop over each numeral character preceeding the M:
+		while True:
+			k = k-1
+			if k < 0:
+				break
+			ck = cigar[k:k+1]
+			if ck in numerals:
+				j += 1
+				l += numerals.index(ck) * 10**j  
+			else:
+				# not a numeral any more:
+				break
+		
+		lmax = max (l, lmax)
+		
+		# copy "unused" part of string to start of string:
+		if i+1 <= n:		
+			cigar = cigar [i+1:]
+			n = len(cigar)
+			l = 0
+			j = -1
+			if n == 0:
+				break
+		else:
+			break
+	
+	return lmax
+
+def vyper__ff_fa_fpga (fa, hits, ihits, ivir, ireads):
+	#######################################################################################
+	# write fasta file for FPGA smith-waterman
+	#######################################################################################
+	out = open (fa, 'w')
+	nphix = 0
+	for k in hits:
+		cols = hits[k]
+		n = int( cols[ihits] )
+		phix = False
+		for kk in range(0,n):
+			if cols[ ivir[kk] ]. find ('phiX174') > -1:
+				phix = True
+		if phix:
+			nphix += 1
+		if not phix:
+			# output virus hit into fasta file:
+			out.write ('>%s_%s;%s\n' % (k, 1, cols[ ivir[0] ] ))
+			out.write ('%s\n' % cols[ireads[0]])
+			if n > 1:
+				out.write ('>%s_%s;%s\n' % (k, 2, cols[ ivir[1] ] ))
+				out.write ('%s\n' % cols[ireads[1]])
+				if n > 2:
+					out.write ('>%s_%s;%s\n' % (k, 3, cols[ ivir[2] ] ))
+					out.write ('%s\n' % cols[ireads[2]])
+	out.close()
+	
+def vyper__ff_remove_hostgenome_hits_smith (smith, outbase, outfile, vhits, ihits, ireads, ivir, ratio):
+	#######################################################################################
+	#  4) b) if smith == 1: write a fasta file for FPGA smith-waterman processing
+	#     c) if smith == 2: read FPGA smith-waterman "detail"-file, removing any host 
+	#        genome hits
+	#######################################################################################
+	
+	if smith == 1:
+
+		##### write fasta file for FPGA smith-waterman:
+		fa='%s.fpga.fa' % (outbase)	
+		vyper__ff_fa_fpga (fa, vhits, ihits, ivir, ireads)
+		print('*** Completed first part of Vy-Per_final_filtering.')
+		print('*** Next, use the RIVYERA-FPGA-Smith-Waterman to align %s against the host genome.' % (fa))
+		print('*** Then, optionally, manually check the alignments in the "detailed" output file and delete those which are host genome alignments.')
+		print('*** Finally, re-run Vy-Per_final_filtering with sw set to 2, and specify the - optionally manually edited - "detailed" output file.')
+		sys.exit ()
+
+	elif smith == 2:
+
+		##### read FPGA smith-waterman detail file and remove host genome hits from dictionary "hits":
+		icontigs = []
+		for i in range(0,3):
+			icontigs.append( ireads[i]-3 )
+	
+		# current read name
+		crname = ''
+		# number of hits for the current read
+		n=0
+	
+		inf=open (outfile, 'r')
+		for line in inf:
+			if line.startswith(' Query'):
+
+				# get read name from e.g. ' Query            0 (3_1)':
+				cols=line.strip().split()
+				# rname = cols[2].split('_')[0][1:]
+				rname = cols[2].split(';')[0].strip(')').strip('(')
+				# virname for debugging:
+				#virname = cols[2].split(';')[1] 
+
+			elif line.startswith(' CIGAR'):
+				# get CIGAR from e.g. ' CIGAR            54M'
+				cigar=line.strip().split()[1]
+
+				# find longest 'Match' stretch:
+				l = vyper__ff_cigar_longest_match (cigar)
+
+				if crname == '':
+					# this is the very first read in the FPGA Smith-Waterman file
+					crname = rname
+				# check whether this is a new read:
+				if rname != crname and n != 0:
+					# initialise variables for new read:
+					crname = rname
+					n = 0
+				# Check whether this is the first hit of the current read, and preferable to the best virus hit:
+				if n == 0:
+					n = 1
+				# Check whether this hit in the host genome is preferable to the virus genome hit:
+								
+				k = int( crname.split('_')[0] )
+				kk = int( crname.split('_')[1].split('-')[0] ) - 1
+				
+				try:
+					vcols = vhits[k]
+					# length of virus hit sequence
+					seq = vcols[ ireads[kk] ]
+					vl = len(seq)
+					vlrat = float(vl)*ratio
+					if float(l) >= vlrat:
+						del vhits[k]
+				except:
+					continue
+	return vhits	
+
+def vyper__ff_sort_hits (hits, ichr, istart, iend):
+	#######################################################################################
+	#  5) sorts by host genome coordinates
+	#######################################################################################
+	unsortedhits = []
+	
+	# copy dictionary-key, chrom, mid-position into list, and sort by chrom and start-position:
+	# (mid-position, because start and end had been taken from read that mapped to host genome
+	# plus/minus a dna fragment length)
+	
+	for k in hits:
+		cols = hits[k]
+		chrom = cols[ichr]
+		pos = float(cols[istart])
+		end = float(cols[iend])
+		fmid = pos + 0.5 * (end-pos)
+		mid = int(fmid)
+		unsortedhits.append( (k, chrom, mid) )
+	# sort list by chrom and mid-position:
+	sortedhits = sorted(unsortedhits, key=operator.itemgetter(1, 2))
+	# the .sort method is old and does not work as well as the sorted function
+	#sortedhits = unsortedhits.sort (key=operator.itemgetter(1, 2))
+	return sortedhits
+	
+def vyper__ff_cluster_hits_analyze (keys, hits1, hits2, hits, ihits, ivir, iread, frac3, ml,
+clustered, cluster, chrom, cchrom, cstart, cend, sortedhits, isortedhits, size, chromlen):
+	#######################################################################################
+	# Analyse the number of hits in this completed cluster, and accept this cluster
+	# only if the min threshold of hits is fulfilled, ie. hits1 and hits2.
+	# Tag the keys in dictionary "hits" that are accepted as hits.
+	# Otherwise: 
+	# a) Try to move the start of the cluster-window to the second hit in the
+	# cluster (unless this chromosome has finished) and remove the first hit from the 
+	# cluster, or
+	# b) if this cluster contains just a single hit, or if a new chromosome is started: 
+	# start a new cluster.
+	#######################################################################################
+	
+	newcluster = False # if True, then the parent code must initialise a new cluster
+	
+	# local variables:
+	vhits = {}	# virus hit counts (weighted) and list of keys-of-hits-dictionary, in current cluster
+	thiscluster = {}	# dictionary of keys-in-hits-dictionary that are accepted in current cluster
+
+	# counting-weights for a) unique-virus hit, b) 2-virus-ambiguity, c) 3-virus-ambiguity:
+	# (the weights for virus-ambiguities have been subjectively chosen to give the highest weight to the
+	# first BLAT hit, and increasingly lower weights for the 2nd and 3rd hits, and to sum up to one.)
+	weights = [[1.0], [0.7, 0.3], [0.6, 0.3, 0.1]]
+	
+	#### check if min number of hits-in-cluster are fulfilled
+	if len(keys) >= hits1:
+		### now check whether min number of same-virus-hits (hits2) are fulfilled:
+		# loop over hits-in-cluster:
+		for k in keys:
+			cols = hits[k]
+			# number of possible viruses for this single hit k:
+			n = int(cols[ihits])
+			# loop over viruses
+			for i in range(0,n):
+				# get virus name:
+				vir = cols[ ivir[i] ]
+				# get virus hit length:
+				lhit = len ( cols[ iread[i] ] )
+				# check whether the thresholds frac3 and ml are fulfilled:
+				if i == 0:
+					l1 = lhit
+					goodhits = [vir]
+				else:
+					try:
+						frac = float(lhit) / float(l1)
+					except:
+						frac = 0.0
+					if frac >= frac3 and l1-lhit <= ml:
+						goodhits.append(vir)  
+			n = len(goodhits)
+			# weight the virus hits, as virus-ambiguities can occur:
+			weight = weights[n-1]
+			# loop over acceptible viruses:
+			for i in range(0,n):
+				vir = goodhits[i]
+				# add weight and key for this virus:
+				if vir in vhits:
+					w, virkeys = vhits[vir]
+					w += weight[i]
+					virkeys.append(k)
+					vhits[vir] = (w, virkeys[:])
+				else:
+					w = weight[i]
+					virkeys = [k]
+					vhits[vir] = (w, virkeys[:])
+		# loop over each virus in hits-cluster, to see whether it is above the hits2 threshold:
+		topviruses = []
+		for vir in vhits:
+			w, virkeys = vhits[vir]
+			if int(w) >= hits2:
+				topviruses.append( (w, vir) )
+				for k in virkeys:
+					# add this virus's keys-in-hits-dictionary to dictionary of keys-in-cluster:
+					thiscluster[k] = 1
+					# globally flag the keys that occurred & were accepted in this cluster:
+					clustered[k] = 1
+		# sort list of top viruses in descending order:
+		if len(topviruses) > 0:
+			topviruses_sorted = sorted( topviruses, key=operator.itemgetter(0), reverse=True )
+			ntopviruses = len(topviruses_sorted)
+		 
+		# append accepted cluster-of-hits to list of clusters:
+		if len(thiscluster) > 0:
+			thisclusterlist = []
+			for k in thiscluster:
+				thisclusterlist.append(k)
+			cluster.append( (cchrom, cstart, cend, thisclusterlist[:], topviruses_sorted [:ntopviruses]) )
+		newcluster = True
+	else:
+		### insufficient hits-in-cluster
+		# check whether more than 1 hit-in-cluster, and no chromosome change
+		#if len(keys) > 1 and cchrom != chrom:
+		if len(keys) > 1 and cchrom == chrom:
+			# adjust start of cluster to the 2nd hit-in-cluster:
+			isortedhits += 1
+			k1, chrom1, mid1 = sortedhits[isortedhits]
+			cstart = mid1
+			lchrom = chromlen[chrom]
+			if chrom != chrom1:
+				sys.exit ('*** Error: 1#')
+			cend = min(mid1 + size, lchrom)
+			# delete first hit, i.e. start of cluster
+			del keys[0]
+		else:
+			### cluster is completed and contains no acceptable hits
+			# must start new cluster (in parent code):
+			newcluster = True
+	return newcluster, keys, cluster, isortedhits, cstart, cend, clustered		
+
+def vyper__ff_cluster_hits (sortedhits, hits, ihits, size, hits1, hits2, frac3, ml, ivir, iread, chromlen):
+	#######################################################################################
+	#  6) a) clusters the virus hits and b) removes hits not in clusters
+	#######################################################################################
+	
+	# cluster list: for each cluster: chrom, start, end, list of "hits"-keys, top 3 viruses
+	cluster = []
+	# tmp dictionary which flags if a key occurred in a cluster (i.e. clustered[key] == 1):
+	clustered = {}
+	
+	### variable initialisation:
+	isortedhits = 0		# start of current cluster, as index of list "sortedhits" 
+	cstart = -1			# start of current cluster, as chromosomal coordinate
+	cchrom = ''			# chromosome of current cluster
+	keys = []	# list of candidate keys-of-hits-dictionary that are in current cluster
+	newcluster = True	# initialise a new cluster, as the first step
+	
+	#######################################################################################
+	# a) cluster the hits:
+	#######################################################################################
+	kk = -1
+	for k, chrom, mid in sortedhits:
+		kk += 1
+		if cchrom != chrom:
+			# change in chromosome, therefore a start of a new cluster
+			if cstart != -1:
+				###########################################################################
+				# Analyse the number of hits in this completed cluster, and accept this cluster
+				# only if the min threshold of hits is fulfilled, ie. hits1 and hits2.
+				# Tag the keys in dictionary "hits" that are accepted as hits.
+				# Otherwise: 
+				# a) Try to move the start of the cluster-window to the second hit in the
+				# cluster (unless this chromosome has finished) and remove the first hit from the 
+				# cluster, or
+				# b) if this cluster contains just a single hit, or if a new chromosome is started: 
+				# start a new cluster.
+				###########################################################################
+				newcluster, keys, cluster, isortedhits, cstart, cend, clustered = vyper__ff_cluster_hits_analyze (keys, 
+				hits1, hits2, hits, ihits, ivir, iread, frac3, ml, clustered, cluster, chrom, cchrom, cstart, cend, sortedhits, 
+				isortedhits, size, chromlen)
+				# force newcluster, as change of chromosome:
+				newcluster = True
+				
+			if newcluster:
+				# initialise a new cluster:
+				cchrom = chrom
+				lchrom = chromlen[chrom]
+				keys = [k]
+				cstart = mid
+				cend = min(cstart + size, lchrom)
+				isortedhits = kk
+		else:
+			# check whether still within the interval defining the cluster
+			if mid <= cend:
+				keys.append(k)
+			else:
+				# outside the interval, so analyse the candidate hits-in-cluster:
+				newcluster, keys, cluster, isortedhits, cstart, cend, clustered = vyper__ff_cluster_hits_analyze (keys, 
+				hits1, hits2, hits, ihits, ivir, iread, frac3, ml, clustered, cluster, chrom, cchrom, cstart, cend, sortedhits, 
+				isortedhits, size, chromlen)
+				
+				if newcluster:
+					# initialise a new cluster:
+					cchrom = chrom
+					lchrom = chromlen[chrom]
+					keys = [k]
+					cstart = mid
+					cend = min(cstart + size, lchrom)
+					isortedhits = kk
+	
+	# close and process the last "opened" cluster:
+	newcluster, keys, cluster, isortedhits, cstart, cend, clustered = vyper__ff_cluster_hits_analyze (keys, 
+	hits1, hits2, hits, ihits, ivir, iread, frac3, ml, clustered, cluster, chrom, cchrom, cstart, cend, sortedhits, 
+	isortedhits, size, chromlen)
+	
+	#######################################################################################
+	# b) remove hits that are not in a cluster
+	#######################################################################################
+	tmp=[]
+	for k in hits:
+		if k not in clustered:
+			tmp.append(k)
+	for k in tmp:
+		del hits[k]
+	return cluster, hits
+
+def vyper__ff_top_hits_in_sample (cluster):
+	#######################################################################################
+	#  8) identifies the top 10 viruses in sample (incl. phiX174)
+	#######################################################################################
+	top10 = []
+	utop10 = []
+	
+	# loop over each hit-cluster:
+	topviruses = {}
+	utopviruses = {}
+	for chrom, cstart, cend, keys, top3viruses in cluster:
+		for w, vir in top3viruses:
+			# unique hits:
+			if len(top3viruses) == 1:
+				if vir in utopviruses:
+					utopviruses [vir] += w
+				else:
+					utopviruses [vir] = w			
+			# all hits incl. non-unique hits:
+			if vir in topviruses:
+				topviruses [vir] += w
+			else:
+				topviruses [vir] = w
+	# copy dictionary into list for sorting in descending order:
+	# unique-hits:
+	utopviruses_unsorted = []
+	for vir in utopviruses:
+		w = utopviruses[vir]
+		utopviruses_unsorted.append( (w, vir) ) 
+	# all hits:
+	topviruses_unsorted = []
+	for vir in topviruses:
+		w = topviruses[vir]
+		topviruses_unsorted.append( (w, vir) ) 
+	
+	# sort list of top viruses:
+	# unique-hits:
+	if len(utopviruses_unsorted) > 0:
+		utopviruses_sorted = sorted( utopviruses_unsorted, key=operator.itemgetter(0), reverse=True )
+		nutopviruses = len(utopviruses_sorted)
+		n = min(10,nutopviruses)
+		print('*** nutopviruses:', nutopviruses)
+		for i in range(0,n):
+			w, vir = utopviruses_sorted[i]
+			utop10.append( (w, vir) )
+	# all hits:
+	if len(topviruses_unsorted) > 0:
+		topviruses_sorted = sorted( topviruses_unsorted, key=operator.itemgetter(0), reverse=True )
+		ntopviruses = len(topviruses_sorted)
+		n = min(10,ntopviruses)
+		for i in range(0,n):
+			w, vir = topviruses_sorted[i]
+			top10.append( (w, vir) )
+	
+	print('*** utop10', utop10) 
+	return top10, utop10
+
+def vyper__ff_output_txt_r (outbase, phixhits, chroms, hits, cluster, top10, utop10):
+	#######################################################################################
+	# 9) Output for Silke's R-Script:
+	# three text files with only one single table-header line each
+	#######################################################################################
+	
+	# a) phiX174 hits in each chromosome
+	outfile = '%s.phiX174_chimera.txt' % (outbase)
+	out = open (outfile, 'w')
+	line = 'Chr\tphiX_hits\thits_chr/hits_genome\tlen_chr/len_genome\n'
+	out.write(line)
+	for chrom in chroms:
+		n, a, b, l = phixhits[chrom]
+		line = '%s\t%s\t%s\t%s\n' % (chrom, n, a, b)
+		out.write(line)
+	out.close()
+	
+	# b) virus hits (incl. phiX174 hits) in each genomic window (cluster):
+	outfile = '%s.hit_clusters.txt' % (outbase)
+	out = open (outfile, 'w')
+	line = 'Chr\tcluster_start\tcluster_end\thits.v1\tvirus1\tID1\thits.v2\tvirus2\tID2\thits.v3\tvirus3\tID3\n'
+	out.write(line)
+	for chrom, cstart, cend, keys, top3viruses in cluster:
+		line = '%s\t%s\t%s\t' % (chrom, cstart, cend)
+		n = len(top3viruses)
+		for hit, vir in top3viruses:
+			shortname = vir.split('|')[3].split(',')[0][:]
+			vir_id = vir.split('|')[2]
+			line += '%s\t%s\t%s\t' % (hit, shortname, vir_id)
+		for i in range(n,3):
+			line += '%s\t%s\t%s\t' % (0.0,'NA','NA')
+		ll = len(line)-1
+		out.write ( line[:ll] + '\n' )
+	out.close()
+
+	# c) Top 10 virus hits (incl. phiX174 hits) in entire genome:
+	outfile = '%s.top10.txt' % (outbase)
+	out = open (outfile, 'w')
+	line = 'Weighted_hits\tunique_hits\tvirus\tID\n'
+	out.write(line)
+	for w, vir in top10:
+		shortname = vir.split('|')[3].split(',')[0][:]
+		vir_id = vir.split('|')[2]
+		# get number of unique hits for vir:
+		wu = 0.
+		for wu, v in utop10:
+			if v == vir:
+				break
+		# output line:
+		line = '%s\t%s\t%s\t%s\n' % (w, wu, shortname, vir_id)
+		out.write(line)
+	out.close()	
+	
+def	vyper__ff_output_txt (size, hits1, hits2, frac1, frac2, frac3, ml, infiles, blat, fai, 
+	outbase, headers, phixhits, chroms, hits, cluster, top10, utop10):
+	#######################################################################################
+	#  9) outputs summary txt, bed, and vcf files of virus clusters
+	#######################################################################################
+	
+	# output text file with full headers:
+	#vyper__ff_output_txt_txt (size, hits1, hits2, frac1, frac2, frac3, ml, infiles, blat, fai, 
+	#outbase, headers, phixhits, chroms, hits, cluster, top10)
+	
+	# output three text files with only one single table-header line each, for Silke's R-Script:
+	vyper__ff_output_txt_r (outbase, phixhits, chroms,hits, cluster, top10, utop10)
+	
+	# output bed file of clusters:
+	#vyper__ff_output_txt_bed (outbase, phixhits, hits, cluster, top10)
+
+	# output vcf file with full headers:
+	#vyper__ff_output_txt_txt (size, hits1, hits2, frac1, frac2, frac3, ml, infiles, blat, fai, 
+	#outbase, headers, phixhits, chroms, hits, cluster, topviruses, top10)
+
+#def	vyper__ff_output_pdf (outbase, size, hits1, plottitle):
+	#######################################################################################
+	#  10) summary graphics by Silke Szymczak
+	#######################################################################################
+	# results file: name of Vy-Per cluster results file
+	# plot file:    name of file for plot
+	# legend:       should legend be shown on figure? (TRUE or FALSE)
+	# main:         title of plot
+	# bin size:     size of bins in bp
+	# chimera threshold:    threshold for number of candidates
+	# anno file (optional): name of tab separated annotation file specifying colors and 
+	#               names to use for different viruses
+	#               (columns virus: virus name used in Vy-Per result file, 
+	#                color: R color, 
+	#                name: virus name or abbreviation that should be used in legend)
+	#######################################################################################
+
+#	backg={}
+#	backg['white'] = 'FALSE'
+#	backg['black'] = 'TRUE'
+#	
+#	results_file = '%s.hit_clusters.txt' % (outbase)
+#	
+#	for bg in backg:
+#		plot_file = '%s.hit_clusters.%sbps.%schimera.%s.pdf' % (outbase, size, hits1, bg)
+#		
+#		#rscript_ideogram.R <results file> <plot file> <background> <legend> <main> <bin size> <chimera threshold>
+#		cmdstring = 'rscript_ideogram.R %s %s %s TRUE "%s" %s %s' % (results_file, plot_file, backg[bg], plottitle, size, hits1)
+#		print(cmdstring)
+#		retcode = call(cmdstring, shell=True)
+#		if retcode != 0:
+#			print('*** Error: rscript_ideogram.R did not run error-free, return-code: %s' % (retcode))
+#			print('***        Tip: Is the R-library quantsmooth installed? To check, start R and enter:')
+#			print('***        library(quantsmooth)')
+#			print('***        To install, start R and enter:')
+#			print('***        source("http://bioconductor.org/biocLite.R")')
+#			print('***        biocLite("quantsmooth")')
+#			sys.exit()
+#		
+#		time.sleep(0.1)
+
+def vyper__ff_dump_list (s, outfile):
+	#######################################################################################
+	# dump list s to file:
+	#######################################################################################
+	with open(outfile, 'wb') as f:
+   		pickle.dump(s, f)
+
+def vyper__ff_undump_list (infile):
+	#######################################################################################
+	# read dumped list s from file:
+	#######################################################################################
+	with open(infile, 'rb') as f:
+		m = pickle.load(f)
+	return m
+
+def vyper__ff_undump_list_chr (infile, chr):
+	#######################################################################################
+	# read chromosome chr entries from dumped list from file:
+	#######################################################################################
+	with open(infile, 'rb') as f:
+		m = pickle.load(f)
+	chr7 = []
+	for lines in m:
+		for cols in lines:
+			if cols == chr:
+				chr7.append(lines[:])
+				break
+	return chr7
+
+def vyper__ff_dump_dict (s, outfile):
+	#######################################################################################
+	# dump dictionary s to file:
+	#######################################################################################
+	out = open (outfile,'w')
+	out.write(str(s))
+	out.close()
+
+def vyper__ff_undump_dict (infile):
+	#######################################################################################
+	# read dumped dictionary s from file:
+	#######################################################################################
+	h=open(infile)
+	s=eval(h.read())
+	h.close()
+	return s
+
+def vyper__ff_undump_dict_chr (infile, chr):
+	#######################################################################################
+	# read chromosome chr entries from dumped dictionary from file:
+	#######################################################################################
+	hits = vyper__ff_undump_dict (infile)
+	chr7 = []
+	for k in hits:
+		line = hits[k]
+		if line[1] == chr:
+			chr7.append(line[:])
+	return chr7
+
+def vyper__final_filtering (infiles, blat, fai, outbase, sw, swout, mq, size, hits1, hits2, frac1,
+frac2, frac3, ml, ratio, plottitle):
+	'''        #######################################################################################
+	#  Vy-PER_final_filtering v0.3.5
+	#######################################################################################
+	#  1) Can read one or multiple (per-lane) Vy-Per files, 
+	#  2) counts phiX174/host paired-end chimeras per chromosome for optical noise QC
+	#  3) removes homopolymer-rich or STR-rich virus candidates,
+	#  4) BLATs the virus candidates to the host genome (window), removing many candidates,
+	#     optionally RIVYERA-Smith-Waterman alignment to remove remaining host genome hits  
+	#  5) sorts by host genome coordinates
+	#  6) clusters the virus/host chimeras and removes chimeras not in clusters,
+	#  7) identifies the top 3 viruses per cluster
+	#  8) identifies the top 10 viruses in sample (incl. phiX174)
+	#  9) outputs summary txt files of virus clusters, top 10 viruses, and phiX/host chimeras
+	#  10) summary graphics (by Silke Szymczak, s.szymczak@ikmb.uni-kiel.de)
+	#######################################################################################
+	#  Vy-PER_final_filtering 
+	#  [-p size hits hits1 frac1 frac2 frac3 ml ratio sw swout] in1 [in2...] blat fai out title
+	#
+	#  [-p      optional parameters
+	#   size    cluster size in bps (default: 1000)  
+	#   hits1   min number of virus/host paired-end chimeras within cluster (default: 10)
+	#   hits2   min number of chimeras from same virus within cluster (default: 10)
+	#   frac1   fraction of Illumina-phiX174-library spike-in (default: 0.01)
+	#   frac2   limit of STR or homopolymer fraction in a virus hit sequence (default: 0.5)  
+	#   if alternative virus hits were detected in the same host genome position: 
+	#   frac3   min length of 2nd (3rd) sequence as fraction of best hit (default: 0.95)  
+	#   ml      max length difference of 2nd (3rd) sequence to best hit (default: 3) 
+	#   ratio   length_host_hit/length_virus_hit > ratio --> host hit (default: 0.90)
+	#   sw      filter hits vs. host genome using Smith-Waterman on RIVYERA-hardware
+	#           (0: no/default, 1: write fasta & stop, 2: read results & complete, 
+	#            3: use VERY SLOW! ultra-sensitive BLAT instead of RIVYERA-Smith-Waterman)
+	#   swout   "out_detail" file from RIVYERA-FPGA-Smith-Waterman 
+	#   mq ]    min read-mapping quality to host genome (default: 0, ie include randomly mapped)
+	#
+	#   inX     input file(s) from a preceeding Vy-Per_blatsam run
+	#   blat    host genome BLAT reference file (e.g. hg19.complete.2bit)      
+	#   fai     host genome samtools index file (e.g. hg19.complete.fa.fai)
+	#   out     base name of output files
+	#   title   plot title in output summary PDF (use "" if several words)
+	# 
+	#######################################################################################
+	#  Michael Forster                                        m.forster@ikmb.uni-kiel.de         
+	#  24 June 2014
+	#######################################################################################
+	'''
+	
+	print('Parameters: size:%s, hits1:%s, hits2:%s, frac1:%s, frac2:%s, frac3:%s, ml:%s, sw:%s' % (
+	size, hits1, hits2, frac1, frac2, frac3, ml, sw))
+	k=1
+	for i in infiles:	
+		print('infile %s: %s' % (k,i))
+		k += 1
+	print('Host genome BLAT 2bit reference sequence file: ',blat)
+	print('Host genome Samtools fai index file: ',fai)
+	print('Output files base name: ',outbase)
+	print('Title in summary plot PDF file: ',plottitle)
+	if sw == 2:
+		print('RIVYERA-FPGA-Smith-Waterman results file: ',swout)
+	
+	#######################################################################################
+	# 1) Read all data from infiles into list "header" and dictionary "hits"
+	#######################################################################################
+	
+	headers = []
+	hits = {}
+	(headers, hits, ichr, istart, iend, ipos1, imapqv, iname, irefseqcontext, ihits, ivir1, iread1, ilen1, 
+	 ie1, ivir2, iread2, ilen2, ie2, ivir3, iread3, ilen3, ie3) = vyper__ff_read (infiles, mq)
+	
+	ivir = [ivir1]
+	ivir.append (ivir2)
+	ivir.append (ivir3)
+	
+	iread = [iread1]
+	iread.append (iread2)
+	iread.append (iread3)
+	
+	#######################################################################################
+	#  2) count phiX174 hits per chromosome for optical noise QC
+	#######################################################################################
+	
+	phixhits = {}
+	chroms = []
+	phixhits, chroms, chromlen = vyper__ff_phix_count (hits, fai, frac1, ichr, ihits, ivir1)
+
+	#######################################################################################
+	#  3) remove homopolymer-rich or STR-rich virus hits (via Phobos)
+	#######################################################################################
+	
+	hits = vyper__ff_remove_homopolymer_n_str (hits, frac2, ihits, iread1, iread2, iread3)
+	
+	#######################################################################################
+	#  4) align the virus hits to the host genome, removing any host genome hits
+	#######################################################################################
+	
+	# 4 a) using BLAT and a local reference sequence context window:
+	hits = vyper__ff_remove_hostgenome_hits (sw, hits, irefseqcontext, ihits, blat, iread1, iread2, iread3, ivir, ratio)
+	if sw == 1 or sw == 2:
+		#  4) b) if smith == 1: write a fasta file for FPGA smith-waterman processing
+		#     c) if smith == 2: read FPGA smith-waterman "detail"-file, removing any host genome hits
+		hits = vyper__ff_remove_hostgenome_hits_smith (sw, outbase, swout, hits, ihits, iread, ivir, ratio)
+
+	#######################################################################################
+	#  5) sorts by host genome coordinates
+	#######################################################################################
+	
+	sortedhits = []
+	sortedhits = vyper__ff_sort_hits (hits, ichr, istart, iend)
+
+	#######################################################################################
+	#  6) clusters the virus hits and removes hits not in clusters, and
+	#  7) identifies the top 3 viruses per cluster
+	#######################################################################################
+	
+	cluster = []
+	cluster, hits = vyper__ff_cluster_hits (sortedhits, hits, ihits, size, hits1, hits2, frac3, ml, ivir, iread, chromlen)
+	#######################################################################################
+	#  8) identifies the top 10 viruses in sample (incl. phiX174)
+	#######################################################################################
+	top10 = []
+	unique_top10 = [] 
+	top10, unique_top10 = vyper__ff_top_hits_in_sample (cluster)
+
+	#######################################################################################
+	#  9) outputs summary txt, bed, and vcf files of virus clusters
+	#######################################################################################
+	
+	vyper__ff_output_txt (size, hits1, hits2, frac1, frac2, frac3, ml, infiles, blat, fai, 
+	outbase, headers, phixhits, chroms, hits, cluster, top10, unique_top10)
+
+	#######################################################################################
+	#  10) summary graphics by Silke Szymczak
+	#######################################################################################
+
+	#vyper__ff_output_pdf (outbase, size, hits1, plottitle)
+		
+###########################################################################################################
+#
+# the actual main
+#
+###########################################################################################################
+
+###########################################################################################################
+# set resource limits:
+###########################################################################################################
+
+setlimits()
+
+###########################################################################################################
+# Get command line arguments
+#
+#  Vy-PER_final_filtering 
+#  [-p size hits hits1 frac1 frac2 frac3 ml ratio sw swout] in1 [in2...] blat fai out plottitle
+#
+###########################################################################################################
+	
+nargs = len(sys.argv)
+if nargs < 7:
+	# Too few arguments
+	print(vyper__final_filtering.__doc__)
+	print('*** Error: too few command line arguments. Min 7 arguments, but you gave only %s arguments.' % (nargs))
+	sys.exit()
+	
+if sys.argv[1] ==  '-p':
+	if nargs < 18:
+		# Too few arguments
+		print(vyper__final_filtering.__doc__)
+		sys.exit('*** Error: too few command line arguments. Min 18 arguments, but you gave only %s arguments.' % (nargs))
+	# get parameters:
+	try:
+		size = int(sys.argv[2])
+		if size < 1:
+			raise Exception
+		hits1 = int(sys.argv[3])
+		if hits1 < 1:
+			raise Exception
+		hits2 = int(sys.argv[4])
+		if hits2 < 1:
+			raise Exception
+		frac1 = float(sys.argv[5])
+		if frac1 < 0.0 or frac1 > 1.0 :
+			raise Exception
+		frac2 = float(sys.argv[6])
+		if frac2 < 0.0 or frac2 > 1.0 :
+			raise Exception
+		frac3 = float(sys.argv[7])
+		if frac3 < 0.0 or frac3 > 1.0 :
+			raise Exception
+		ml = int(sys.argv[8])
+		if ml < 0:
+			raise Exception
+		ratio = float(sys.argv[9])
+		if ratio < 0.0 or ratio > 1.0 :
+			raise Exception
+		sw = int(sys.argv[10])
+		if sw < 0 or sw > 3:
+			raise Exception
+		swout = sys.argv[11]
+		mq = int(sys.argv[12])
+		if mq < 0 or mq > 10000:
+			raise Exception
+	except:
+		print(vyper__final_filtering.__doc__)
+		line=''
+		for i in range(0,13):
+			line += '%s ' % sys.argv[i]
+		print(line)
+		sys.exit('*** Error: You specified a bad value in the "-p" parameter list.')
+	# number of arguments so far processed in sys.argv
+	k=12
+	# number of input files:
+	n = nargs - 17
+else:
+	# default parameters:
+	size = 1000
+	hits1 = 10
+	hits2 = 10
+	frac1 = 0.01
+	frac2 = 0.5
+	frac3 = 0.95
+	ml = 3
+	ratio = 0.90
+	sw = 0
+	swout = ''
+	mq = 0
+	# number of arguments so far processed in sys.argv
+	k=0
+	# number of input files:
+	n = nargs - 6
+
+infiles = []
+for i in range(0,n):
+	k += 1
+	infiles.append( sys.argv[k] )
+k += 1
+blat = sys.argv[k]
+k += 1
+fai = sys.argv[k]
+k += 1
+outbase = sys.argv[k]
+k += 1
+try:
+	plottitle = sys.argv[k]
+except:
+	print('k:',k)
+	print('outbase:', outbase)
+	print('*** Error: unable to read plot title')
+vyper__final_filtering (infiles, blat, fai, outbase, sw, swout, mq, size, hits1, hits2, frac1, frac2, frac3, ml, ratio, plottitle)
+print('*** Vy-PER_final_filtering completed successfully')

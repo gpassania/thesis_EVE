@@ -1,0 +1,632 @@
+#!/usr/bin/python
+##!/bin/env python
+
+import sys
+import os.path
+import time
+import resource
+
+###########################################################################################################
+#
+#  Vy-PER - Virus integration detection bY Paired End Reads 
+#
+#  Vy-PER helps to identify reads from paired-end sequencing, where one end aligns to host DNA 
+#  (e.g. a human genome), and the other end aligns to e.g. a virus genome (or any other non-host genome).
+#
+#  vyper_blatsam sorts these reads according to the genomic coordinate of the host, so that potential 
+#  sites of virus DNA integration into the host can be identified.
+#
+###########################################################################################################
+
+def setlimits():
+	#############################################################################
+	# sets resource limits (mandatory for job interoperability on cluster)
+	# to 10MB Stack + 1GB data + 1GB RLIMIT_RSS
+	# first steps taken from
+	# http://docs.python.org/library/resource.html and
+	# http://www.doughellmann.com/PyMOTW/resource/
+	# Author: MICHAEL FORSTER m.forster@ikmb.uni-kiel.de
+	# Version: 13 September 2010
+	#############################################################################
+
+	usage = resource.getrusage(resource.RUSAGE_SELF)
+
+#	print ' usage ='
+#	print usage
+	
+	for name, desc in [
+	('RLIMIT_CORE', 'core file size'),
+	('RLIMIT_CPU',  'CPU time'),
+	('RLIMIT_FSIZE', 'file size'),
+	('RLIMIT_DATA', 'heap size'),
+	('RLIMIT_STACK', 'stack size'),
+	('RLIMIT_RSS', 'resident set size'),
+	('RLIMIT_NPROC', 'number of processes'),
+	('RLIMIT_NOFILE', 'number of open files'),
+	('RLIMIT_MEMLOCK', 'lockable memory address'),
+	]:
+		limit_num = getattr(resource, name)
+		soft, hard = resource.getrlimit(limit_num)
+	#	print 'Maximum %-25s (%-15s) : %20s %20s' % (desc, name, soft, hard)
+
+	#############################################################################
+	# Adjust the maximum size (in bytes) of the process's heap
+	#############################################################################
+
+	soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+	#print 'Data/heap limit starts as  :', soft
+
+	# 1GB heap:
+	newheap=100*1024*1024*1024
+
+	resource.setrlimit(resource.RLIMIT_DATA, (newheap, hard))
+
+	soft, hard = resource.getrlimit(resource.RLIMIT_DATA)
+	#print 'Data/heap limit changed to :', soft
+
+	#############################################################################
+	# ca 10MB original stack changed to exactly 10MB stack:
+	#############################################################################
+
+	#newstack=10*1024*1024+1
+	newstack=10*1024*1024
+	soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+	#print 'Stack limit starts as  :', soft
+	resource.setrlimit(resource.RLIMIT_STACK, (newstack, hard))
+	soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
+	#print 'Stack limit changed to :', soft
+
+	#############################################################################
+	# 1GB RLIMIT_RSS
+	# "Maximale resident set size in Byte. Bei Speicherengpaessen entzieht der Kern
+	# den Prozessen, die den resident set size ueberschreiten, den zuviel
+	# angeforderten Speicher."
+	# http://pronix.linuxdelta.de/C/Linuxprogrammierung/Linuxsystemprogrammieren_C_Kurs_Kapitel3a.shtml
+	#############################################################################
+
+	newrss=100*1024*1024*1024
+	soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
+	#print 'RLIMIT_RSS starts as  :', soft
+	resource.setrlimit(resource.RLIMIT_RSS, (newrss, hard))
+	soft, hard = resource.getrlimit(resource.RLIMIT_RSS)
+	#print 'RLIMIT_RSS changed to :', soft
+
+	#sys.exit()
+
+def vyper_blatsam_blat (blatfile):
+	#######################################################################################
+	# Create a dictionary of BLAT read hits to virus references
+	#######################################################################################
+	
+	# dictionary of BLAT read hits
+	blat={}
+	# current read name
+	crname = ''
+	# list of top 3 contigs hit with the current read
+	contigs = []
+	# dictionary of top 3 hits with the current read (must be hits in different contigs)
+	hits={}
+	# number of hits for the current read
+	n=0
+	
+	inf=open (blatfile, 'r')
+	k=0
+	for line in inf:
+		if line.startswith('#'):
+			continue
+		cols = line.split()
+		
+		# read name
+		rname = cols[0].strip()
+		if crname == '':
+			# this is the very first read in the blat file
+			crname = rname
+		
+		# contig name that the read aligns to
+		contig = cols[1].strip()
+
+		# check whether this is a new read:
+		if rname != crname and n != 0:
+			# fill contigs list
+			for i in range(n,3):
+				contigs.append('')
+				hits[i]= ('',0,0,0,0,0,0.)
+			# copy predecessor read's hit(s) into dictionary:
+			# blat[crname] = (n, contigs[0] [:], hits.copy() )
+			blat[crname] = (n, contigs[:], hits.copy() )
+			
+			# initialise variables for new read:
+			contigs = []
+			hits = {}
+			crname = rname
+			n = 0
+		
+		# Check whether this hit of the current read should be added to the list
+		if n < 3:
+			if contig in contigs:
+				# this contig is already in list of hits
+				continue
+			contigs.append(contig)
+			# same read, but new virus contig was hit
+			n += 1
+			# percentage of matching bases within the softclipped read
+			pc = cols[2]
+			# length of the softclipped read
+			l = int(cols[3])
+			# first base of read aligned to virus reference
+			first = min( int(cols[6]), int(cols[7]) )
+			# last base of read aligned to virus reference
+			last = max( int(cols[6]), int(cols[7]) )
+			# start position of alignment in virus reference
+			start = min( int(cols[8]), int(cols[9]) )
+			# end position of alignment in virus reference
+			end = max( int(cols[8]), int(cols[9]) )
+			# Expectation-value
+			e = float(cols[10])
+			hits[n-1] = pc, l, first, last, start, end, e
+	
+	# End of file reached - complete processing current read:
+	if n != 0:
+		# fill contigs list
+		for i in range(n,3):
+			contigs.append(str(i))
+			hits[i]= ('',0,0,0,0,0,0.)
+		# copy predecessor read's hit(s) into dictionary:
+		# blat[crname] = (n, (contigs[i] [:], for i in range(0,3) ), hits.copy() )
+		blat[crname] = (n, contigs [:], hits.copy() )
+
+	inf.close()
+	return blat
+
+def vyper_blatsam_maplen (cigar):
+	#######################################################################################
+	# Get mapped-read-length from a SAM-file-column-5-CIGAR string.
+	#######################################################################################
+	mapl = 0
+	l = 0
+	num=''
+	# loop over all characters in string
+	for c in cigar:
+		# ascii code
+		asci = ord(c) 
+		if asci > 47 and asci < 58:
+			# is a numeral between 0 and 9
+			num += c
+		elif c == 'M':
+			# the preceeding number was "mapped bases"
+			mapl += int(num)
+			l += int(num)
+			num=''
+		elif c != 'M':
+			# the preceeding number was not "mapped bases" (e.g. clipped bases)
+			l += int(num)
+			num=''	
+	return mapl, l
+
+def vyper_blatsam_maplocus (flg, pos, length):
+	#######################################################################################
+	# compute start and end of host genome locus of interest:
+	#######################################################################################
+	
+	# NOTE: It is unimportant whether the sam-mapped read is the first or second read in a pair.
+	if flg&16 == 16:
+		# reverse strand:
+		start = pos - 4 * length
+		end = pos + length
+	else:
+		# forward strand:
+		start = pos
+		end = pos + 5 * length
+	return start, end
+
+def vyper_blatsam_locs (blat, sam):
+	#######################################################################################
+	# Get the reads' potential host genome integation loci from the samfile
+	#######################################################################################
+
+	# dictionary for contig, start, end, map-qaulity, and refseqwindowsize of a read:
+	locs = {}
+	
+	inf = open (samfile, 'r')
+	print('vyper_blatsam_locs: samfile=', samfile)
+
+	# loop over all lines in the sam file
+	while True:
+		line=inf.readline()
+		if len(line) == 0:
+			# EOF reached
+			break
+		if line.startswith('#') or line.startswith('@'):
+			continue
+		line=line.strip()
+		cols = line.split()
+		rname = cols[0]
+		
+		if rname not in blat:
+			# this samfile read is not paired to a virus genome hit
+			continue
+		# mapping quality:
+		try:
+			mapq = int(cols[4])
+		except:
+			mapq = 0
+		# compute mapped read length:
+		cigar = cols[5]
+		if cigar == '*':
+			# this read is unmapped
+			continue
+		pos = int(cols[3])
+		maplen, length = vyper_blatsam_maplen (cigar)
+		# check for unmapped-read bit:
+		flg = int(cols[1])
+		if flg&4 == 4:
+			# this read is unmapped, and in BAM-files from BWA the remaining read info is junk!!
+			continue
+		# compute start and end of host genome locus of interest:
+		start, end = vyper_blatsam_maplocus (flg, pos, length)
+		contig = cols[2]
+		locs[rname] = contig, start, end, pos, mapq
+	
+	inf.close()
+	return locs
+
+def vyper_blatsam_fai (refseqfile):
+	#######################################################################################
+	# read chromnames, lengths and binary starts (0-based) from fasta-index-file:
+	#######################################################################################
+	faifile=refseqfile+'.fai'
+	faifh=open(faifile)
+	fai={}
+	for line in faifh:
+		cols=line.split('\t')
+		fai[cols[0]]=(int(cols[1]),int(cols[2]))
+	return fai
+
+def vyper_blatsam_refseq (refseq, fai, chrom, start, end):
+	#######################################################################################
+	# get reference sequence context
+	#######################################################################################
+	
+	# chrom length and start in refseq fasta file
+	lmax,k = fai[chrom]
+	
+	# line length (excl. EOL) in fasta file (must be constant):
+	refseq.seek(k)
+	t=refseq.read(1000)
+	ll=t.find('\n')
+	
+	# fragment start and end in chromosome:
+	j1=max(0,start)
+	j2=min(end,lmax)
+	
+	# fragment start and end in refseq fasta file:
+	nn=int(j1/ll)
+	rr= j1 % ll
+	jj1=k+nn*(ll+1)+rr
+	nn=int(j2/ll)
+	rr= j2 % ll
+	jj2=k+nn*(ll+1)+rr
+	
+	# number of bytes
+	n=jj2-jj1+1
+	
+	refseq.seek(jj1)
+	t=''
+	jj=0
+	for jj in range(0,n):
+		tt=refseq.read(1)
+		if tt != '\n':
+			t+=tt
+	return t
+
+def vyper_blatsam_seqs (blat, blatref, fafile, locs, samref):
+	#######################################################################################
+	# Get the reads' sequences from the fafile, and the reference sequence context in 
+	# virus and host
+	#######################################################################################
+	
+	# dictionary for sequence and reference sequence context of a read:
+	seqs = {}
+	
+	inf = open (fafile, 'r')
+	infb = open (blatref, 'r')
+	infs = open (samref, 'r')
+	
+	# read chromnames, lengths and binary starts (0-based) from virus fasta-index-file:
+	blatfai = vyper_blatsam_fai (blatref)
+	
+	# read chromnames, lengths and binary starts (0-based) from host fasta-index-file:
+	samfai = vyper_blatsam_fai (samref)
+	
+	# loop over all sequences in the fasta file
+	while True:
+		line=inf.readline()
+		
+		if len(line) == 0:
+			# EOF reached
+			break
+		if not line.startswith('>'):
+			continue
+		line=line.strip()
+		cols = line.split()
+		# read name
+		rname = cols[0][1:]
+		if rname in blat:
+			# get full read sequence
+			seq = inf.readline().strip()
+			# get clipped read sequence for each of the virus alignments,
+			# and reference sequence context for each virus alignments
+			clipseq = []
+			virefseq = []
+			n, contigs, hits = blat[rname]
+			for i in range(0,n):
+				pc, l, first, last, start, end, e = hits[i]
+				clipseq.append( seq[first:last] )
+				seqi = vyper_blatsam_refseq (infb, blatfai, contigs[i], start, end-1 )
+				virefseq.append ( seqi )
+			for i in range(n,3):
+				clipseq.append ('')
+				virefseq.append ('')
+			# get reference sequence context from the host sequence
+			try:
+				contig, start, end, pos, mapq = locs[rname]
+				hostseq = vyper_blatsam_refseq (infs, samfai, contig, start, end)
+			except:
+				pass
+			# output: full read sequence, host refseq context, for each hit: clipped read and virus refseq context 
+			seqs[rname] = seq, hostseq, clipseq, virefseq
+			
+	inf.close()
+	infb.close()
+	infs.close()
+	
+	return seqs
+
+
+def vyper_blatsam_out (blat, locs, seqs, outfile, outfadir):
+	#######################################################################################
+	# Write the output file
+	#######################################################################################
+	out = open(outfile,"w")
+	
+	#### file header ####
+	outtime = time.strftime("%Y_%m_%d__%H:%M:%S") + "\n"
+	out.write ('# File created by Vy-PER (vy-PER_blatsam v0.3.1) on '+ outtime)
+	
+	out.write ('# Run ID: \t%s\n' % (runid) )
+	out.write ('# FASTA file of virus reference sequences: \t%s\n' % (blatref) )
+	out.write ('# BLAST/BLAT file of virus hits: \t%s\n' % (blatfile) )
+	out.write ('# FASTA file of reads that were BLATed to the virus reference sequences: \t%s\n' % (fafile) )
+	out.write ('# FASTA file of host reference sequences: \t%s\n' % (samref) )
+	out.write ('# SAM file of the read alignments to host reference: \t%s\n' % (samfile) )
+	out.write ('#\n')
+	out.write ('# Chr, Start, End: genomic coordinates (1-based) in the host where the mapped end of the read-pair was aligned to\n')
+	out.write ('# Read: full sequence of the unmapped end of the read-pair, i.e. which was not mapped to the host genome\n')
+	
+
+	# TO DO: check whether the BLAST/BLAT coords are 0-based or 1-based
+	header = '#RunID\tChr\tStart\tEnd\tPos[1]\tMapQV\tRead_name\tRead\tRefSeqContext\tHits'
+	header += '\tContig.1\tStart.1\tEnd.1\tRead.1\tVirSeqContext.1\tLen.1\tE.1'
+	header += '\tContig.2\tStart.2\tEnd.2\tRead.2\tVirSeqContext.2\tLen.2\tE.2'
+	header += '\tContig.3\tStart.3\tEnd.3\tRead.3\tVirSeqContext.3\tLen.3\tE.3'
+	header += '\n'
+	out.write (header)
+
+	#### Output loop for each read that was successfully BLATed to the virus sequences ####
+	
+	for rname in blat:
+		# number of (top) hits, contig list for each hit, dictionary of BLAST outputs for each hit:
+		n, contigs, hits = blat[rname]
+		# (putative) virus integration locus into host genome
+		try:
+			contig, start, end, pos, mapq = locs[rname]
+		except:
+			pass
+		# full read sequence, host refseq context, for each hit: clipped read and virus refseq context 
+		seq, hostseq, clipseq, virefseq = seqs[rname]
+		
+		# assemble + write output line:
+		line = '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (runid, contig, start, end, pos, mapq, rname, seq, hostseq, n)
+		for i in range(0,3):
+			pc, l, first, last, starti, endi, e = hits[i]
+			# Contig.1\tStart.1\tEnd.1\tRead.1\tVirSeqContext.1\tLen.1\tE
+			line += '\t%s\t%s\t%s\t%s\t%s\t%s\t%s' % (contigs[i], starti, endi, clipseq[i], virefseq[i], l, e)
+		line += '\n'
+		out.write(line)
+		
+		####  write FASTA files for manual inspection ####
+		if not outfadir == '':
+			try:
+				# make a subfolder for each host chromosome
+				outfad = outfadir+'/'+contig
+				if not os.path.isdir(outfad):
+					os.makedirs(outfad)
+			except:
+				dummy=0
+				
+			# for windows-compatible file names: 
+			# replace ':' in rname by '+', and '|' by '='
+			rname1 = rname.replace(':','+')
+			rname1 = rname1.replace('|','=')
+			 
+			# read
+			outf = '%s/%s_%s.fa.txt' % (outfad, runid, rname1)  
+			try:
+				o = open(outf,'w')
+				o.write('>%s\n' % (rname) )
+				o.write('%s\n' % (seq))
+				o.close()
+			except:
+				print('*** ERROR: open/write to fasta file {}').format(outf)
+				
+			# host refseq
+			contig1 = contig.replace('|','=')
+			outf = '%s/%s_%s_host_%s_%s_%s.fa.txt' % (outfad, runid, rname1, contig1, start, end) 
+			try:
+				o = open(outf,'w')
+				o.write('>%s:%s-%s\n' % (contig,start,end) )
+				o.write('%s\n' % (hostseq))
+				o.close()
+			except:
+				print('*** ERROR: open/write to fasta file {}').format(outf)
+						
+			for i in range(0,3):
+				if i >= n:
+					break
+				pc, l, first, last, starti, endi, e = hits[i]
+				contig1 = contigs[i].replace('|','=')
+				outf = '%s/%s_%s_virus_%s_%s_%s.fa.txt' % (outfad, runid, rname1, contig1, starti, endi) 
+				try:
+					o = open(outf,'w')
+					o.write('>%s:%s-%s\n' % (contigs[i],starti,endi) )
+					o.write('%s\n' % (virefseq[i]))
+					o.close()
+				except:
+					print('*** ERROR: open/write to fasta file {}').format(outf)
+				
+	out.close()
+
+def vyper_blatsam (runid, blatref, blatfile, fafile, samref, samfile, outfile, outfadir):
+	'''        #######################################################################################
+	#  Vy-PER_blatsam v0.3.2
+	#######################################################################################
+	#  Vy-PER - Virus integration detection bY Paired End Reads
+	#
+	#  Vy-PER helps to identify reads from paired-end sequencing, where one end aligns
+	#  to host DNA (e.g. a human genome), and the other end aligns to e.g. a virus genome
+	#  (or to any other non-host genome).
+	#
+	#  Vy-PER_blatsam sorts these reads according to the genomic coordinate of the host, 
+	#  so that potential sites of virus DNA integration into the host can be identified.
+	#######################################################################################
+	# Usage:
+	# Vy-PER_blatsam  id  blatref  blat  fa  samref  sam  out [outfa]
+	#
+	#   id       a user-specified ID, for example Illumina library, run, slide and lane.
+	#            (in case of a multi-run multi-lane genome experiment, use vyper on 
+	#            per-lane files, then merge the vyper results. The id serves to keep
+	#            the per-lane files apart.)
+	#
+	#   blatref  FASTA file of virus reference sequences (fai index must exist)
+	#   blat     BLAST file of virus hits (the same format: BLAT -out=blast8) 
+	#   fa       FASTA file of reads that were BLATed to the virus reference sequences
+	#   samref   FASTA file of host reference sequences  (fai index must exist)
+	#   sam      SAM file of the paired-end read alignments to host reference
+	#   out      output file (tab-separated text)
+	#
+	# [ outfa ]  (optional) output directory for FASTA files for manual inspections
+	#
+	#######################################################################################
+	#  Michael Forster                                        m.forster@ikmb.uni-kiel.de
+	#  11 April 2014
+	#######################################################################################
+	'''
+	
+	print('id:         ',runid)
+	print('blatref:    ',blatref)
+	print('blatfile:   ',blatfile)
+	print('fa:         ',fafile)
+	print('samref:     ',samref)
+	print('samfile:    ',samfile)
+	print('outfile:    ',outfile)
+	if not outfadir == '':
+		print('outfa:      ',outfadir)
+
+	#######################################################################################
+	# Create a dictionary of BLAT read hits to virus references
+	#######################################################################################
+	
+	blat = vyper_blatsam_blat (blatfile)
+	
+	#print blat
+	# save the dict for faster testingdebugging
+	#f=open('myblatdict.txt','w')
+	#f.write(str(blat))
+	#f.close()
+	#sys.exit()	
+
+	#######################################################################################
+	# Get the reads' potential host genome integation loci from the samfile
+	#######################################################################################
+	
+	locs = vyper_blatsam_locs (blat, samfile)
+	##print locs
+	#f=open('mylocsdict.txt','w')
+	#f.write(str(locs))
+	#f.close()
+	#sys.exit()	
+
+	#######################################################################################
+	# Get the reads' sequences from the fafile, and the reference sequence context in 
+	# virus and host
+	#######################################################################################
+	
+	#h=open('mylocsdict.txt')
+	#locs=eval(h.read())
+	#h.close()
+	#h=open('myblatdict.txt')
+	#blat=eval(h.read())
+	#h.close()
+	
+	seqs = vyper_blatsam_seqs (blat, blatref, fafile, locs, samref)
+	
+	#print seqs
+	#f=open('myseqsdict.txt','w')
+	#f.write(str(seqs))
+	#f.close()
+	#sys.exit()
+	
+	#######################################################################################
+	# Write the output file
+	#######################################################################################
+
+	#h=open('myseqsdict.txt')
+	#seqs=eval(h.read())
+	#h.close()
+	
+	vyper_blatsam_out (blat, locs, seqs, outfile, outfadir)
+
+###########################################################################################################
+#
+# the actual main
+#
+###########################################################################################################
+
+###########################################################################################################
+# set resource limits:
+###########################################################################################################
+
+setlimits()
+
+###########################################################################################################
+# Get command line arguments
+#
+# Vy-PER_blatsam  <blatref>  <blat>  <fa>  <samref>  <sam>  <out>
+###########################################################################################################
+
+nargs = len(sys.argv)
+if nargs < 7:
+	# Too few arguments
+	print (vyper_blatsam.__doc__)
+	sys.exit()
+	
+runid = sys.argv[1]
+blatref = sys.argv[2]
+blatfile = sys.argv[3]
+fafile = sys.argv[4]
+samref = sys.argv[5]
+samfile = sys.argv[6]
+outfile = sys.argv[7]	
+
+outfadir = ''
+if nargs > 8:
+	outfadir = sys.argv[8]
+
+###########################################################################################################
+# call main procedure
+###########################################################################################################
+
+vyper_blatsam (runid, blatref, blatfile, fafile, samref, samfile, outfile, outfadir)
+print('*** Vy-PER_blatsam completed successfully')
+
+

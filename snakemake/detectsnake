@@ -1,0 +1,238 @@
+configfile: "config.yaml"
+print("processing:", config["refgenomes"])
+print(config["reference_path"])
+rule all:
+	input:
+		"/".join(config["database"].split("/")[:-1]) + "/viral_db.dmnd",
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}.blastx", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_EVEs.bed", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_sorted.bed", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_merged.bed", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_top.bed", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_top.fasta", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr.blastx", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr_fixed", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr_taxids", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}/", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts.txt", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts_final.txt", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts_final.png", refgenome=config["refgenomes"], species=config["species"]),
+		expand(config["mainpath"] + "results/blast/{species}/combined_extracts.txt", species=config["species"]),
+
+
+
+		
+
+#################################################################################
+#Detection pipeline
+#################################################################################	
+rule makedatabase:
+	input:
+		db_fasta = config["database_prot"]
+	output:
+		config["mainpath"] + "databases/viral_db.dmnd"
+	params:
+		scriptpath = config["scripts_path"] + "./diamond" 
+	shell:
+		"""
+		{params.scriptpath} makedb --in {input.db_fasta} -d {output} --threads 8
+		"""
+
+rule diamond_rvdb:
+	input:
+		ref = config["reference_path"] + "{refgenome}",
+		db_name = config["mainpath"] + "databases/viral_db.dmnd"
+	output:
+		outfile = config["mainpath"] + "results/blast/{species}/{refgenome}.blastx"
+	params:
+		outfmt = "6 qseqid qstart qend salltitles evalue qframe pident qcovhsp sstart send slen",
+		evalue = "1e-6",
+		threads = "30",
+		scriptpath = config["scripts_path"] + "./diamond" 
+	resources:
+		mem_mb = 400000
+	shell:
+		"""
+		{params.scriptpath} blastx -q {input.ref} -d {input.db_name} -e {params.evalue} \
+		-p {params.threads} -f {params.outfmt} -o {output.outfile} -M 755G
+		"""
+
+rule blast_to_bed:
+	input:
+		config["mainpath"] + "results/blast/{species}/{refgenome}.blastx"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_EVEs.bed"
+	params:
+		script = config["scripts_path"] + "Blast_to_Bed3.py"
+	conda:
+		"envs/python2.yaml"
+	shell:
+		"""
+		python {params.script} {input}
+		"""
+rule bedtools_sort:
+	input:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_EVEs.bed"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_sorted.bed"
+	shell:
+		"""
+		bedtools sort -i {input} > {output}
+		"""
+	
+rule bedtools_merge:
+	input:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_sorted.bed"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_merged.bed"
+	params:
+		c = "4,5,6,7,8,9,10,11",
+		o = "collapse,collapse,distinct,collapse,collapse,collapse,collapse,collapse"
+	shell:
+		"""
+		bedtools merge -i {input} -c {params.c} -o {params.o} > {output}
+		"""
+
+rule top_score_bed2:
+	input:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_merged.bed"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_top.bed"
+	params:
+		config["scripts_path"] + "Top_score_BED2.py"
+	conda:
+		"envs/python2.yaml"
+	shell:
+		"""
+		python {params} {input} {output}
+		"""
+
+rule bedtools_getfasta:
+	input:
+		bedfile = config["mainpath"] + "results/blast/{species}/{refgenome}_top.bed",
+		ref = config["reference_path"] + "{refgenome}"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_top.fasta"
+	shell:
+		"""
+		bedtools getfasta -s -name -fi {input.ref} -bed {input.bedfile} -fo {output}
+		"""
+		
+rule diamond_nr:
+	input:
+		query = config["mainpath"] + "results/blast/{species}/{refgenome}_top.fasta"
+	output:
+		outfile = config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr.blastx"
+	params:
+		outfmt = "6 qseqid qstart qend salltitles evalue qframe pident qcovhsp sstart send slen",
+		evalue = "1e-06",
+		threads = "8",
+		scriptpath = config["scripts_path"] + "./diamond",
+		db_name = config["mainpath"] + "databases/nr_link/nr"
+	resources:
+		mem_mb = 400000
+	shell:
+		"""
+		{params.scriptpath} blastx -q {input.query} -d {params.db_name} -e {params.evalue} \
+		-p {params.threads} -f {params.outfmt} -o {output.outfile}
+		"""
+		
+rule fix_titles:
+	input:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr.blastx"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr_fixed"
+	params:
+		config["scripts_path"] + "fix_titles.py"
+	shell:
+		"""
+		python3 {params} {input} {output}
+		"""
+
+rule acc_to_taxid:
+	input:
+		blastx = config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr_fixed",
+		ncbifile = config["mainpath"] + "dmp/prot.accession2taxid.FULL"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr_taxids"
+	params:
+		config["scripts_path"] + "acc_to_taxid.py"
+	shell:
+		"""
+		python3 {params} {input.blastx} {input.ncbifile} {output}
+		"""
+
+
+	
+rule refine_candidates:
+	input:
+		blastx = config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr_taxids",
+		bedfile = config["mainpath"] + "results/blast/{species}/{refgenome}_top.bed"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}/Output/CompleteTable.txt"
+	params:
+		pipe_dir = config["scripts_path"] + "Refine_EVEs_annotation",
+		tool = "diamond",
+		vhc = config["scripts_path"] + "Refine_EVEs_annotation/VHost-Classifier",
+		taxonkit = "taxonkit",
+		script = config["scripts_path"] + "Refine_EVEs_annotation/Refine_EVE_Annotation.sh"
+	conda:
+		"envs/ete.yaml"
+	resources:
+		mem_mb=800000
+	shell:
+		"""
+		bash {params.script} -pipeline_directory {params.pipe_dir} -reverse_blast_tool {params.tool} \
+		-VHC_directory {params.vhc} -file_blastx {input.blastx} -file_bed_tophit {input.bedfile} \
+		-output_directory {output} -taxonkit_exe {params.taxonkit}
+		"""
+		
+rule select_results:
+	input:
+		config["mainpath"] + "results/blast/{species}/{refgenome}/Output/CompleteTable.txt"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts.txt"
+	params:
+		config["scripts_path"] + "detect_select.py"
+	shell:
+		"""
+		python3 {params} {input}
+		"""
+rule filter_results:
+	input:
+		extracts = config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts.txt",
+		blastx = config["mainpath"] + "results/blast/{species}/{refgenome}_EVEsTop_nr.blastx"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts_final.txt"
+	params:
+		config["scripts_path"] + "detect_filter_final.py"
+	shell:
+		"""
+		python3 {params} {input.extracts} {input.blastx}
+		"""
+rule combine_extracts:
+	input:
+		expand(config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts_final.txt", refgenome=config["refgenomes"], species=config["species"])
+	output:
+		expand(config["mainpath"] + "results/blast/{species}/combined_extracts.txt", species=config["species"])
+	params:
+		config["scripts_path"] + "combine_results_detect.py"
+	conda:
+		"envs/ete.yaml"
+	shell:
+		"""
+		python3 {params} {input}
+		"""
+
+rule create_plots:
+	input:
+		single = config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts_final.txt",
+		comb = config["mainpath"] + "results/blast/{species}/combined_extracts.txt"
+	output:
+		config["mainpath"] + "results/blast/{species}/{refgenome}/Output/{refgenome}_extracts_final.png",
+	params:
+		config["scripts_path"] + "R_plots_detect.R"
+	shell:
+		 """
+		 Rscript {params} {input.single} {input.comb}
+		 """

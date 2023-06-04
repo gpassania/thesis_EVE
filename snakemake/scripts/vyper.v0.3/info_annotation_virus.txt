@@ -1,0 +1,7 @@
+virus	color	name
+Caviid_herpesvirus_2	cyan	Caviid herpesvirus 2
+Cercopithecine_herpesvirus_2	magenta	Cercopithecine herpesvirus 2
+Enterobacteria_phage_M13	black	Enterobacteria phage M13
+Enterobacteria_phage_phiX174	gray	Enterobacteria phage phiX174
+Hepatitis_B_virus	orange	Hepatitis B virus
+Pseudomonas_phage_Pf1	green	Pseudomonas phage Pf1

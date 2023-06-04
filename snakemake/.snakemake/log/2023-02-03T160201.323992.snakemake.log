@@ -1,3 +1,0 @@
-AttributeError in file /lustre/BIF/nobackup/passa006/snakemake/testsnake, line 14:
-'dict' object has no attribute 'yaml'
-  File "/lustre/BIF/nobackup/passa006/snakemake/testsnake", line 14, in <module>

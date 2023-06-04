@@ -1,4 +1,0 @@
-Building DAG of jobs...
-MissingInputException in line 9 of /lustre/BIF/nobackup/passa006/snakemake/testsnake:
-Missing input files for rule write_config:
--np

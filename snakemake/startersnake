@@ -1,40 +1,33 @@
-
 from sys import argv
 
 rule all:
 	input:
-		"../data/split_ref/chr1.fasta",
 		"config.yaml",
-		"/".join(argv[4].split("/")[:-1])+"/results/"
+		"startersnake.log",
+		"temp.log"
 	
 rule write_config:
-	input:
-		ref = argv[4],
-		db = argv[6]
 	output:
 		"config.yaml"
+	params:
+		ref = argv[4],
+		db = argv[6],
+		fastq = argv[8],
+		scripts_path = argv[10],
+		database_prot = argv[12]
 	shell:
 		"""
-		python3 scripts/add_configs.py {input.ref} {input.db}
-		"""
-
-rule split_reference_genome:
-	input:
-		 ref = argv[4]
-	output:
-		"../data/split_ref/chr1.fasta"
-	priority: 10
-	shell:
-		"""
-		python3 ../snakemake/scripts/split_ref.py {input}
-		mv chr* ../data/split_ref/
-		mv SPEXI* ../data/split_ref/
+		python3 scripts/add_configs.py {params.ref} {params.db} {params.fastq} {params.scripts_path} {params.database_prot}
 		"""
 
 rule run_configurated_pipeline:
-	output: 
-		directory("/".join(argv[4].split("/")[:-1])+"/results/")
+	input:
+		"config.yaml" 
+	log:
+		"startersnake.log"
 	shell:
 		"""
-		snakemake -s Snakefile --cores 32
+		sleep 3
+		
+		nice -16 snakemake -s identsnake --cores 90 --use-conda --resources mem_mb=800000 --latency-wait 3
 		"""
