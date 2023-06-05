@@ -40,9 +40,13 @@ def get_oneliners(regionsfile):
 			if clusternum != init:
 				start = min(starters)
 				end = max(enders)
+				if start > end:
+					start = max(starters)
+					end = min(enders)
 				oldline[1] = str(start)
 				oldline[2] = str(end)
 				length = end - start
+				length = abs(length)
 				oldline.append(str(length))
 				newline = "\t".join(oldline)
 				newline_list.append(newline)

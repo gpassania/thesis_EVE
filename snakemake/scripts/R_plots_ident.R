@@ -1,13 +1,11 @@
  #!/usr/bin/env Rscript
 
-"""
-author: Gian Passania
+#author: Gian Passania
+#script for visualization of identification pipeline outputs
 
-script for visualization of identification pipeline outputs
+#usage:
+#Rscript R_plot_ident.R [overlapping_regions.txt] [unique_regions.txt]
 
-usage:
-Rscript R_plot_ident.R [overlapping_regions.txt] [unique_regions.txt]
-"""
 
 #import statements
 library(ggplot2)
@@ -52,10 +50,11 @@ plotname = paste(name, ".png", sep="")
 plotname
 #import file as table
 df = read.table(args[2], header=TRUE, sep="\t", row.names=NULL, fill = TRUE)
-df
+
 #plot table
-plot = ggplot(df, aes(Chr, colour = fullVirusName)) 
-plot = plot + geom_bar(stat="identity")
+plot = ggplot(df, aes(SampleID)) 
+plot = plot + geom_bar(aes(fill=FullVirusName))
+
 
 #write to png
 png(filename= plotname, width=1040,  height=760, units="px", bg = "black")
